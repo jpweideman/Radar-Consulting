@@ -1,4 +1,3 @@
-## Data Extraction for LSTM
 
 Before running the LSTM model, extract the required data:
 
