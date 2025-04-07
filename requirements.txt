@@ -1,0 +1,10 @@
+numpy
+matplotlib
+tensorflow
+wradlib
+xarray
+cartopy
+xradar
+tensorflow
+arm_pyart
+seaborn
