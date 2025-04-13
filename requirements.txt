@@ -10,3 +10,4 @@ arm_pyart
 seaborn
 tqdm
 scikit-learn
+scikit-image

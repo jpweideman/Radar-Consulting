@@ -163,7 +163,7 @@ if __name__ == "__main__":
     # Save the padded dataset along with its corresponding times in a single .npz file.
     if ml_data_pad is not None:
         print("ML data (padded) ready. Number of files processed:", ml_data_pad.shape[0])
-        np.savez("ml_data_pad_with_times.npz", data=ml_data_pad, times=np.array(times_pad))
+        np.savez("Data/ml_data_pad_with_times.npz", data=ml_data_pad, times=np.array(times_pad))
         print("Saved padded dataset and times to ml_data_pad_with_times.npz")
     else:
         print("No padded data extracted.")

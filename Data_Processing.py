@@ -63,5 +63,5 @@ dataset = np.stack(all_data)
 print("Final dataset shape:", dataset.shape)
 
 # Save to .npy file
-np.save("ZH_radar_dataset.npy", dataset)
+np.save("Data/ZH_radar_dataset.npy", dataset)
 print("Saved dataset to ZH_radar_dataset.npy")
