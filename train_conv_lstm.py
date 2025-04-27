@@ -1,294 +1,313 @@
-"""
-train_conv_lstm.py
-------------------
-Train a ConvLSTM on 4-D radar data with
- • z-score normalisation (stats taken ONLY from the training horizon)
- • chronological train/val split
- • weighted MSE that emphasises >30 dBZ echoes
- • automatic checkpoints (latest + best)
- • Weights & Biases integration for experiment tracking
-
-Author: you
-"""
-
+import argparse
 from pathlib import Path
-import numpy as np, torch, torch.nn as nn
+import numpy as np
+import torch
+import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, Subset
-import wandb  # Add wandb import
+import wandb
 
-# ------------------------------------------------------------------
-# 1)  Dataset – keep raw dBZ
-# ------------------------------------------------------------------
+
+# Dataset – raw dBZ which gets normalized by max
+
 class RadarWindowDataset(Dataset):
-    def __init__(self, cube, seq_in, seq_out):
+    def __init__(self, cube_norm, seq_in, seq_out):
+        # cube_norm: np.ndarray shape (T,C,H,W) in [0,1]
         X, Y = [], []
-        last_start = cube.shape[0] - seq_in - seq_out + 1
-        for t in range(last_start):
-            X.append(cube[t       : t+seq_in   ])      # raw dBZ
-            Y.append(cube[t+seq_in: t+seq_in+1].squeeze(0))
-        self.X = np.stack(X).astype(np.float32)        # (N,S,C,H,W)
-        self.Y = np.stack(Y).astype(np.float32)        # (N,C,H,W)
+        last = cube_norm.shape[0] - seq_in - seq_out + 1
+        for t in range(last):
+            X.append(cube_norm[t:t+seq_in])
+            Y.append(cube_norm[t+seq_in:t+seq_in+seq_out].squeeze(0))
+        self.X = np.stack(X).astype(np.float32)  # (N,seq_in,C,H,W)
+        self.Y = np.stack(Y).astype(np.float32)  # (N,C,H,W)
 
-    def __len__(self):  return len(self.X)
+    def __len__(self):
+        return len(self.X)
+
     def __getitem__(self, i):
         return torch.from_numpy(self.X[i]), torch.from_numpy(self.Y[i])
 
-# ------------------------------------------------------------------
-# 2)  ConvLSTM blocks
-# ------------------------------------------------------------------
+
+# ConvLSTM building blocks
+
 class ConvLSTMCell(nn.Module):
-    def __init__(self, in_ch, hid_ch, k=3):
+    def __init__(self, in_ch, hid_ch, kernel=3):
         super().__init__()
-        p = k // 2
+        p = kernel // 2
         self.hid_ch = hid_ch
-        self.conv = nn.Conv2d(in_ch + hid_ch, 4 * hid_ch, k, padding=p)
+        self.conv = nn.Conv2d(in_ch + hid_ch, 4 * hid_ch, kernel, padding=p)
 
     def forward(self, x, h, c):
-        i, f, o, g = torch.chunk(self.conv(torch.cat([x, h], 1)), 4, 1)
+        gates = self.conv(torch.cat([x, h], dim=1))
+        i,f,o,g = gates.chunk(4, dim=1)
         i, f, o = torch.sigmoid(i), torch.sigmoid(f), torch.sigmoid(o)
-        g = torch.tanh(g)
-        c = f * c + i * g
-        h = o * torch.tanh(c)
-        return h, c
+        g       = torch.tanh(g)
+        c_next  = f * c + i * g
+        h_next  = o * torch.tanh(c_next)
+        return h_next, c_next
 
-    def init_hidden(self, B, H, W, dev):
-        h = torch.zeros(B, self.hid_ch, H, W, device=dev)
-        c = torch.zeros_like(h)
-        return h, c
+    def init_hidden(self, B, H, W, device):
+        h = torch.zeros(B, self.hid_ch, H, W, device=device)
+        return h, h.clone()
 
 class ConvLSTM(nn.Module):
-    def __init__(self, in_ch, hidden, k=3):
+    def __init__(self, in_ch, hidden_dims=(64,64), kernel=3):
         super().__init__()
         self.layers = nn.ModuleList()
-        for i, h in enumerate(hidden):
-            self.layers.append(
-                ConvLSTMCell(in_ch if i == 0 else hidden[i-1], h, k))
-        self.to_out = nn.Conv2d(hidden[-1], in_ch, 1)
+        for idx, h in enumerate(hidden_dims):
+            i_ch = in_ch if idx == 0 else hidden_dims[idx-1]
+            self.layers.append(ConvLSTMCell(i_ch, h, kernel))
+        self.to_out = nn.Conv2d(hidden_dims[-1], in_ch, 1)
 
-    def forward(self, x):             # x (B,S,C,H,W)
-        B, S, _, H, W = x.shape
-        dev = x.device
+    def forward(self, x):
+        # x: (B,S,C,H,W)
+        B,S,_,H,W = x.shape
+        device = x.device
         h_list, c_list = [], []
         for cell in self.layers:
-            h,c = cell.init_hidden(B,H,W,dev)
+            h,c = cell.init_hidden(B, H, W, device)
             h_list.append(h); c_list.append(c)
-
         for t in range(S):
-            x_t = x[:, t]
-            for i, cell in enumerate(self.layers):
-                h_list[i], c_list[i] = cell(x_t, h_list[i], c_list[i])
-                x_t = h_list[i]
+            xt = x[:,t]
+            for i,cell in enumerate(self.layers):
+                h_list[i], c_list[i] = cell(xt, h_list[i], c_list[i])
+                xt = h_list[i]
+        return self.to_out(xt)  # (B,C,H,W)
 
-        return self.to_out(x_t)       # (B,C,H,W)
 
-# ------------------------------------------------------------------
-# 3)  Training function
-# ------------------------------------------------------------------
+# Training function
+
 def train_radar_model(
-        npy_path:   str,
-        save_dir:   str,
-        *,
-        seq_len_in = 10,
-        seq_len_out= 1,
-        train_frac = 0.8,
-        batch      = 4,
-        lr         = 2e-4,
-        hidden     = (64,64),
-        kernel     = 3,
-        hi_thresh  = 30.0,
-        hi_weight  = 8.0,
-        epochs     = 15,
-        device     = "cuda" if torch.cuda.is_available() else "cpu"):
+    npy_path: str,
+    save_dir: str,
+    *,
+    seq_len_in: int = 10,
+    seq_len_out: int = 1,
+    train_frac: float = 0.8,
+    batch_size: int = 4,
+    lr: float = 2e-4,
+    hidden_dims: tuple = (64,64),
+    kernel_size: int = 3,
+    epochs: int = 15,
+    device: str = None
+):
+    """
+    Train a ConvLSTM radar forecasting model.
 
-    # ---------- ensure output dir exists ----------
-    save_dir = Path(save_dir)                 # convert once
+    Parameters
+    ----------
+    npy_path : str
+        Path to the input NumPy file containing radar reflectivity data with shape (T, C, H, W).
+    save_dir : str
+        Directory to save model checkpoints and statistics.
+    seq_len_in : int, optional
+        Number of input time steps (default: 10).
+    seq_len_out : int, optional
+        Number of output time steps to predict (default: 1).
+    train_frac : float, optional
+        Fraction of the data to use for training; the remainder is used for validation (default: 0.8).
+    batch_size : int, optional
+        Batch size for training (default: 4).
+    lr : float, optional
+        Learning rate for the optimizer (default: 2e-4).
+    hidden_dims : tuple of int, optional
+        Hidden channel sizes for each ConvLSTM layer (default: (64, 64)).
+    kernel_size : int, optional
+        Convolution kernel size for ConvLSTM cells (default: 3).
+    epochs : int, optional
+        Number of training epochs (default: 15).
+    device : str, optional
+        Device to run training on ('cuda' or 'cpu'); defaults to 'cuda' if available.
+
+    Returns
+    -------
+    None
+    """
+        
+    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    save_dir = Path(save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
-    # ---------- load cube ----------
+
+    # load & sanitize
     cube = np.load(npy_path)
     cube[cube < 0] = 0
-    T, C, H, W = cube.shape
+    T,C,H,W = cube.shape
     print(f"Loaded {npy_path} → {cube.shape}")
 
-    # ---------- chronological split ----------
+    # chronological split & min-max
     n_total = T - seq_len_in - seq_len_out + 1
     n_train = int(n_total * train_frac)
+    ref = cube[:n_train+seq_len_in]
+    maxv = float(ref.max())
+    np.savez(save_dir/"minmax_stats.npz", maxv=maxv)
+    eps = 1e-6
+    cube_n = cube.astype(np.float32) / (maxv + eps)
 
-    # build datasets
-    full_ds  = RadarWindowDataset(cube, seq_len_in, seq_len_out)
+    # DataLoaders
+    full_ds  = RadarWindowDataset(cube_n, seq_len_in, seq_len_out)
     train_ds = Subset(full_ds, list(range(0, n_train)))
     val_ds   = Subset(full_ds, list(range(n_train, n_total)))
+    train_dl = DataLoader(train_ds, batch_size, shuffle=False)
+    val_dl   = DataLoader(val_ds,   batch_size, shuffle=False)
+    print(f"Samples  train={len(train_ds)}  val={len(val_ds)}")
 
-    train_dl = DataLoader(train_ds, batch, shuffle=False)
-    val_dl   = DataLoader(val_ds,   batch, shuffle=False)
-    print(f"Samples train={len(train_ds)}  val={len(val_ds)}")
+    # model, optimizer, loss
+    model     = ConvLSTM(in_ch=C, hidden_dims=hidden_dims, kernel=kernel_size).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    criterion = nn.MSELoss()
 
-    # ---------- model, loss, opt ----------
-    model = ConvLSTM(in_ch=C, hidden=hidden, k=kernel).to(device)
-    optim = torch.optim.Adam(model.parameters(), lr=lr)
+    # checkpoints
+    ckpt_latest = save_dir/"latest.pt"
+    ckpt_best   = save_dir/"best_val.pt"
+    best_val    = float('inf')
+    start_ep    = 1
+    if ckpt_latest.exists():
+        st = torch.load(ckpt_latest, map_location=device)
+        model.load_state_dict(st['model'])
+        optimizer.load_state_dict(st['optim'])
+        best_val = st['best_val']
+        start_ep = st['epoch'] + 1
+        print(f"✔ Resumed epoch {st['epoch']} (best_val={best_val:.4f})")
 
-# ---------------AUTO-RESUME-------------------------
-    latest   = Path(save_dir) / "latest.pt"
-    best_wts = Path(save_dir) / "best_val.pt"
-    best_val = float("inf")
-    start_ep = 1
-
-    if latest.exists():
-        chk = torch.load(latest, map_location=device)
-        model.load_state_dict(chk["model"])
-        optim.load_state_dict(chk["optim"])
-        best_val = chk["best_val"]
-        start_ep = chk["epoch"] + 1
-        print(f"✔ Resumed from epoch {chk['epoch']}  (best val={best_val:.4f})")
-# --------------------------------------------------
-
-    # Initialize wandb after model and optimizer setup
-    run_id = save_dir.name  # use your folder name as a stable run ID
+    # wandb
+    run_id = save_dir.name
     wandb.init(
         project="radar-forecasting",
-        name=run_id,            
-        id=run_id,               # this ties W&B to the same run
-        resume="allow",              # auto-resume same run
+        name=run_id,
+        id=run_id,
+        resume="allow",
         config={
-            "seq_len_in": seq_len_in,
-            "seq_len_out": seq_len_out,
-            "train_frac": train_frac,
-            "batch_size": batch,
-            "learning_rate": lr,
-            "hidden_dims": hidden,
-            "kernel_size": kernel,
-            "hi_threshold": hi_thresh,
-            "hi_weight": hi_weight,
-            "epochs": epochs,
-            "device": device
+            'seq_len_in': seq_len_in,
+            'train_frac': train_frac,
+            'batch_size': batch_size,
+            'lr': lr,
+            'hidden_dims': hidden_dims,
+            'kernel_size': kernel_size,
+            'epochs': epochs,
+            'device': device
         }
     )
-    wandb.watch(model)  # Track model gradients and parameters
+    wandb.watch(model)
 
-    hi_thr = torch.tensor(hi_thresh, device=device)
-    hi_w   = torch.tensor(hi_weight, device=device)
-
-    def weighted_mse(pred, target):
-        """Both pred/target are raw dBZ tensors"""
-        w = torch.where(target >= hi_thr, hi_w, 1.0)
-        return (w * (pred - target) ** 2).mean()
-
-    # ---------- checkpoint setup ----------
-    latest   = save_dir/"latest.pt"
-    best_wts = save_dir/"best_val.pt"
-    best_val = float("inf")
-
-    # ---------- training loop ----------
-    def run_epoch(loader, train=True):
+    # training loop
+    def run_epoch(dl, train=True):
         model.train() if train else model.eval()
-        total = 0.
+        tot=0.0
         with torch.set_grad_enabled(train):
-            for x,y in loader:
-                x,y = x.to(device), y.to(device)
-                pred = model(x)
-                loss = weighted_mse(pred, y)
+            for xb,yb in dl:
+                xb,yb = xb.to(device), yb.to(device)
+                pred  = model(xb)
+                loss  = criterion(pred, yb)
                 if train:
-                    optim.zero_grad(); loss.backward()
-                    nn.utils.clip_grad_norm_(model.parameters(),1.)
-                    optim.step()
-                total += loss.item()*x.size(0)
-        return total / len(loader.dataset)
+                    optimizer.zero_grad(); loss.backward(); optimizer.step()
+                tot += loss.item()*xb.size(0)
+        return tot/len(dl.dataset)
 
-    for ep in range(start_ep, epochs + 1):
+    for ep in range(start_ep, epochs+1):
         tr = run_epoch(train_dl, True)
         vl = run_epoch(val_dl,   False)
         print(f"[{ep:02d}/{epochs}] train {tr:.4f} | val {vl:.4f}")
-
-        # Log metrics to wandb
-        wandb.log({
-            "train_loss": tr,
-            "val_loss": vl,
-            "epoch": ep
-        })
-
-        torch.save({'epoch':ep,
-                    'model':model.state_dict(),
-                    'optim':optim.state_dict(),
-                    'best_val':best_val},
-                   latest)
-
+        wandb.log({'epoch':ep,'train_loss':tr,'val_loss':vl})
+        torch.save({'epoch':ep,'model':model.state_dict(),
+                    'optim':optimizer.state_dict(),'best_val':best_val},
+                   ckpt_latest)
         if vl < best_val:
             best_val = vl
-            torch.save(model.state_dict(), best_wts)
+            torch.save(model.state_dict(), ckpt_best)
             print("  🏆 new best saved")
-            # Log best validation loss
-            wandb.log({"best_val_loss": best_val})
+            wandb.log({'best_val_loss':best_val})
 
-    print("Done. Checkpoints stored in", save_dir.resolve())
-    wandb.finish()  # End the wandb run
+    print("Done. Checkpoints in", save_dir.resolve())
+    wandb.finish()
 
-# ------------------------------------------------------------------
-# 3b) predict_validation_set  (simplified)
-# ------------------------------------------------------------------
+
+# Predict entire validation set (and undoes scaling)
+
 def predict_validation_set(
-        npy_path : str,
-        run_dir  : str,
-        *,
-        seq_len_in=10, seq_len_out=1,
-        train_frac=0.8, batch=4,
-        hidden=(64,64), kernel=3,
-        which_ckpt="best", device="cpu",
-        save_arrays=True):
+    npy_path: str,
+    run_dir:  str,
+    *,
+    seq_len_in: int = 10,
+    seq_len_out: int = 1,
+    train_frac: float = 0.8,
+    batch_size: int = 4,
+    hidden_dims: tuple = (64,64),
+    kernel_size: int = 3,
+    which: str = "best",
+    device: str = None,
+    save_arrays: bool = True
+):
+    """
+    Run inference on the validation set using a ConvLSTM model from train_radar_model.
 
+    Parameters
+    ----------
+    npy_path : str
+        Path to the input NumPy file containing radar reflectivity data with shape (T, C, H, W).
+    run_dir : str
+        Directory containing model checkpoints and statistics.
+    seq_len_in : int, optional
+        Number of input time steps (default: 10).
+    seq_len_out : int, optional
+        Number of output time steps to predict (default: 1).
+    train_frac : float, optional
+        Fraction of data used for training split (default: 0.8).
+    batch_size : int, optional
+        Batch size for inference (default: 4).
+    hidden_dims : tuple of int, optional
+        Hidden channel sizes for each ConvLSTM layer (default: (64, 64)).
+    kernel_size : int, optional
+        Convolution kernel size (default: 3).
+    which : str, optional
+        Which checkpoint to load: 'best' for best validation or 'latest' (default: 'best').
+    device : str, optional
+        Device to run inference on (default: 'cpu').
+    save_arrays : bool, optional
+        Whether to save predictions and targets as .npy files in run_dir (default: True).
+
+    Returns
+    -------
+    pred_all : np.ndarray
+        Array of shape (N, C, H, W) containing predicted radar reflectivity values.
+    tgt_all : np.ndarray
+        Array of shape (N, C, H, W) containing ground truth radar reflectivity values.
+    """
+
+    device = device or "cpu"
     run_dir = Path(run_dir)
-    ckpt_f  = run_dir / ("best_val.pt" if which_ckpt=="best" else "latest.pt")
+    ckpt    = run_dir / ("best_val.pt" if which=="best" else "latest.pt")
+    stats   = np.load(run_dir/"minmax_stats.npz")
+    maxv    = float(stats['maxv']); eps=1e-6
 
-    cube = np.load(npy_path).astype(np.float32)
-    C    = cube.shape[1]
+    cube = np.load(npy_path); cube[cube<0]=0
+    norm = cube.astype(np.float32)/(maxv+eps)
 
-    # rebuild split
     T       = cube.shape[0]
-    n_total = T - seq_len_in - seq_len_out + 1
-    n_train = int(n_total * train_frac)
+    n_tot   = T - seq_len_in - seq_len_out + 1
+    n_train = int(n_tot * train_frac)
+    ds      = RadarWindowDataset(norm, seq_len_in, seq_len_out)
+    val_ds  = Subset(ds, list(range(n_train, n_tot)))
+    dl      = DataLoader(val_ds, batch_size, shuffle=False)
 
-    full_ds = RadarWindowDataset(cube, seq_len_in, seq_len_out)
-    val_ds  = Subset(full_ds, list(range(n_train, n_total)))
-    val_dl  = DataLoader(val_ds, batch_size=batch, shuffle=False)
-
-    # model
-    model = ConvLSTM(in_ch=C, hidden=hidden, k=kernel).to(device)
-    state = torch.load(ckpt_f, map_location=device)
-    if isinstance(state, dict) and "model" in state:
-        state = state["model"]
-    model.load_state_dict(state); model.eval()
+    model = ConvLSTM(in_ch=cube.shape[1], hidden_dims=hidden_dims, kernel=kernel_size)
+    st = torch.load(ckpt, map_location=device)
+    if isinstance(st, dict) and 'model' in st:
+        st=st['model']
+    model.load_state_dict(st)
+    model.to(device).eval()
 
     preds, gts = [], []
     with torch.no_grad():
-        for xb, yb in val_dl:
+        for xb,yb in dl:
             xb = xb.to(device)
-            pred = model(xb).cpu()
-            preds.append(pred)
-            gts.append(yb)            # already on CPU
-    pred_all = torch.cat(preds).numpy()
-    tgt_all  = torch.cat(gts ).numpy()
+            out_n = model(xb).cpu().numpy()
+            preds.append(out_n*(maxv+eps))
+            gts.append(yb.numpy()*(maxv+eps))
 
+    pred_all = np.concatenate(preds,axis=0)
+    tgt_all  = np.concatenate(gts,axis=0)
     if save_arrays:
         np.save(run_dir/"val_preds_dBZ.npy",   pred_all)
         np.save(run_dir/"val_targets_dBZ.npy", tgt_all)
-        print("Saved arrays in", run_dir)
+        print("Saved val_preds_dBZ.npy + val_targets_dBZ.npy →", run_dir)
 
     return pred_all, tgt_all
-
-# # ------------------------------------------------------------------
-# # 4)  CLI helper  (optional)
-# # ------------------------------------------------------------------
-# if __name__ == "__main__":
-#     import argparse, textwrap
-#     p = argparse.ArgumentParser(
-#         formatter_class=argparse.RawDescriptionHelpFormatter,
-#         description=textwrap.dedent("""\
-#             Train ConvLSTM on radar cube.
-
-#             Example:
-#               python train_conv_lstm.py Data/ZH_radar_dataset.npy runs/run1
-#         """))
-#     p.add_argument("npy_path")
-#     p.add_argument("save_dir")
-#     p.add_argument("--epochs", type=int, default=15)
-#     args = p.parse_args()
-
-#     train_radar_model(args.npy_path, args.save_dir, epochs=args.epochs)
