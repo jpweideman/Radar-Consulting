@@ -1,0 +1,7 @@
+{"time":"2025-04-26T15:46:16.271262461+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250426_154614-haxz5gmr/logs/debug-core.log"}
+{"time":"2025-04-26T15:46:16.886569273+02:00","level":"INFO","msg":"created new stream","id":"haxz5gmr"}
+{"time":"2025-04-26T15:46:16.886627866+02:00","level":"INFO","msg":"stream: started","id":"haxz5gmr"}
+{"time":"2025-04-26T15:46:16.886661583+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"haxz5gmr"}
+{"time":"2025-04-26T15:46:16.886730124+02:00","level":"INFO","msg":"sender: started","stream_id":"haxz5gmr"}
+{"time":"2025-04-26T15:46:16.886725865+02:00","level":"INFO","msg":"handler: started","stream_id":"haxz5gmr"}
+{"time":"2025-04-26T15:46:17.138770606+02:00","level":"INFO","msg":"Starting system monitor"}

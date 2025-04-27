@@ -1,0 +1,16 @@
+{"time":"2025-04-26T18:49:15.487663795+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250426_184915-run3/logs/debug-core.log"}
+{"time":"2025-04-26T18:49:16.178730229+02:00","level":"INFO","msg":"created new stream","id":"run3"}
+{"time":"2025-04-26T18:49:16.178779371+02:00","level":"INFO","msg":"stream: started","id":"run3"}
+{"time":"2025-04-26T18:49:16.178818989+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"run3"}
+{"time":"2025-04-26T18:49:16.178898272+02:00","level":"INFO","msg":"handler: started","stream_id":"run3"}
+{"time":"2025-04-26T18:49:16.178929181+02:00","level":"INFO","msg":"sender: started","stream_id":"run3"}
+{"time":"2025-04-26T18:49:16.774032037+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-04-26T18:55:36.213467994+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-04-26T18:55:36.213535813+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-04-26T18:55:37.217937926+02:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading output.log","runtime_seconds":0.595768154},{"desc":"uploading config.yaml","runtime_seconds":0.382590361,"progress":"42.5KB/42.5KB"}],"total_operations":2}}
+{"time":"2025-04-26T18:55:37.431348902+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-04-26T18:55:37.670215794+02:00","level":"INFO","msg":"stream: closing","id":"run3"}
+{"time":"2025-04-26T18:55:37.670246053+02:00","level":"INFO","msg":"handler: closed","stream_id":"run3"}
+{"time":"2025-04-26T18:55:37.670259621+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"run3"}
+{"time":"2025-04-26T18:55:37.670349831+02:00","level":"INFO","msg":"sender: closed","stream_id":"run3"}
+{"time":"2025-04-26T18:55:37.671270524+02:00","level":"INFO","msg":"stream: closed","id":"run3"}
