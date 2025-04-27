@@ -7,6 +7,10 @@ from tqdm import tqdm  # for progress bar
 data_dir = "wradlib_data"
 os.environ['WRADLIB_DATA'] = data_dir
 
+# Ensure output directory exists
+output_dir = "Data"
+os.makedirs(output_dir, exist_ok=True)
+
 # Target padded shape
 TARGET_H, TARGET_W = 360, 240
 
