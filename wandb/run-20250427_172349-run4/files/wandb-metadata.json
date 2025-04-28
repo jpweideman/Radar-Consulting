@@ -1,0 +1,42 @@
+{
+  "os": "Linux-6.1.0-32-amd64-x86_64-with-glibc2.36",
+  "python": "CPython 3.12.9",
+  "startedAt": "2025-04-27T15:23:50.114749Z",
+  "program": "/home/ra65puy/Documents/Radar-Consulting/convLSTM_pytorch.ipynb",
+  "codePath": "convLSTM_pytorch.ipynb",
+  "git": {
+    "remote": "https://github.com/jpweideman/Radar-Consulting.git",
+    "commit": "aa29dc755afbb3ce52476a91f42d917910edff79"
+  },
+  "email": "johnpierrew@gmail.com",
+  "root": "/home/ra65puy/Documents/Radar-Consulting",
+  "host": "LMMISTA-CIP-226",
+  "executable": "/home/ra65puy/miniconda3/bin/python",
+  "codePathLocal": "convLSTM_pytorch.ipynb",
+  "cpu_count": 12,
+  "cpu_count_logical": 20,
+  "gpu": "NVIDIA GeForce RTX 3060",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "500402536448",
+      "used": "19988770816"
+    }
+  },
+  "memory": {
+    "total": "67081428992"
+  },
+  "cpu": {
+    "count": 12,
+    "countLogical": 20
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 3060",
+      "memoryTotal": "12884901888",
+      "cudaCores": 3584,
+      "architecture": "Ampere"
+    }
+  ],
+  "cudaVersion": "12.2"
+}
