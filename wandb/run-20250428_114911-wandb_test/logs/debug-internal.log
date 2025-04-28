@@ -1,0 +1,16 @@
+{"time":"2025-04-28T11:49:11.502871406+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250428_114911-wandb_test/logs/debug-core.log"}
+{"time":"2025-04-28T11:49:11.683119134+02:00","level":"INFO","msg":"created new stream","id":"wandb_test"}
+{"time":"2025-04-28T11:49:11.683180406+02:00","level":"INFO","msg":"stream: started","id":"wandb_test"}
+{"time":"2025-04-28T11:49:11.683284771+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"wandb_test"}
+{"time":"2025-04-28T11:49:11.683312583+02:00","level":"INFO","msg":"sender: started","stream_id":"wandb_test"}
+{"time":"2025-04-28T11:49:11.68341093+02:00","level":"INFO","msg":"handler: started","stream_id":"wandb_test"}
+{"time":"2025-04-28T11:49:12.172131186+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-04-28T11:49:57.943389948+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-04-28T11:49:57.943450859+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-04-28T11:49:58.594906068+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-04-28T11:49:58.841463779+02:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2025-04-28T11:49:58.855158284+02:00","level":"INFO","msg":"stream: closing","id":"wandb_test"}
+{"time":"2025-04-28T11:49:58.855192385+02:00","level":"INFO","msg":"handler: closed","stream_id":"wandb_test"}
+{"time":"2025-04-28T11:49:58.855206953+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"wandb_test"}
+{"time":"2025-04-28T11:49:58.855233484+02:00","level":"INFO","msg":"sender: closed","stream_id":"wandb_test"}
+{"time":"2025-04-28T11:49:58.857811598+02:00","level":"INFO","msg":"stream: closed","id":"wandb_test"}

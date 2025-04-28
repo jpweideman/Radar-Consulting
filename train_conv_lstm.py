@@ -28,10 +28,10 @@ class RadarWindowDataset(Dataset):
 
 
 # ConvLSTM building blocks
-
 class ConvLSTMCell(nn.Module):
     def __init__(self, in_ch, hid_ch, kernel=3):
         super().__init__()
+        assert kernel % 2 == 1, "Kernel size must be odd for ConvLSTM to preserve spatial dimensions!"
         p = kernel // 2
         self.hid_ch = hid_ch
         self.conv = nn.Conv2d(in_ch + hid_ch, 4 * hid_ch, kernel, padding=p)
@@ -48,9 +48,15 @@ class ConvLSTMCell(nn.Module):
     def init_hidden(self, B, H, W, device):
         h = torch.zeros(B, self.hid_ch, H, W, device=device)
         return h, h.clone()
-
+    
+    
 class ConvLSTM(nn.Module):
-    def __init__(self, in_ch, hidden_dims=(64,64), kernel=3):
+    def __init__(self, in_ch, hidden_dims=(64, 64), kernel=3):
+        """
+        in_ch: input channels
+        hidden_dims: list of hidden dimensions per layer
+        kernel: kernel size
+        """
         super().__init__()
         self.layers = nn.ModuleList()
         for idx, h in enumerate(hidden_dims):
@@ -59,19 +65,19 @@ class ConvLSTM(nn.Module):
         self.to_out = nn.Conv2d(hidden_dims[-1], in_ch, 1)
 
     def forward(self, x):
-        # x: (B,S,C,H,W)
-        B,S,_,H,W = x.shape
+        B, S, _, H, W = x.shape
         device = x.device
         h_list, c_list = [], []
         for cell in self.layers:
-            h,c = cell.init_hidden(B, H, W, device)
-            h_list.append(h); c_list.append(c)
+            h, c = cell.init_hidden(B, H, W, device)
+            h_list.append(h)
+            c_list.append(c)
         for t in range(S):
-            xt = x[:,t]
-            for i,cell in enumerate(self.layers):
+            xt = x[:, t]
+            for i, cell in enumerate(self.layers):
                 h_list[i], c_list[i] = cell(xt, h_list[i], c_list[i])
                 xt = h_list[i]
-        return self.to_out(xt)  # (B,C,H,W)
+        return self.to_out(xt)
 
 
 # Training function
@@ -109,8 +115,8 @@ def train_radar_model(
         Batch size for training (default: 4).
     lr : float, optional
         Learning rate for the optimizer (default: 2e-4).
-    hidden_dims : tuple of int, optional
-        Hidden channel sizes for each ConvLSTM layer (default: (64, 64)).
+    hidden_dims : list or tuple of int, optional
+        List specifying hidden channel size for each ConvLSTM layer (e.g., [32, 64, 128, 32]).
     kernel_size : int, optional
         Convolution kernel size for ConvLSTM cells (default: 3).
     epochs : int, optional
@@ -159,7 +165,7 @@ def train_radar_model(
     ckpt_latest = save_dir/"latest.pt"
     ckpt_best   = save_dir/"best_val.pt"
     best_val    = float('inf')
-    start_ep    = 1
+    start_ep = 1
     if ckpt_latest.exists():
         st = torch.load(ckpt_latest, map_location=device)
         model.load_state_dict(st['model'])
@@ -167,6 +173,8 @@ def train_radar_model(
         best_val = st['best_val']
         start_ep = st['epoch'] + 1
         print(f"✔ Resumed epoch {st['epoch']} (best_val={best_val:.4f})")
+
+    end_epoch = start_ep + epochs - 1
 
     # wandb
     run_id = save_dir.name
@@ -202,10 +210,10 @@ def train_radar_model(
                 tot += loss.item()*xb.size(0)
         return tot/len(dl.dataset)
 
-    for ep in range(start_ep, epochs+1):
+    for ep in range(start_ep, end_epoch+1):
         tr = run_epoch(train_dl, True)
         vl = run_epoch(val_dl,   False)
-        print(f"[{ep:02d}/{epochs}] train {tr:.4f} | val {vl:.4f}")
+        print(f"[{ep:02d}/{end_epoch}] train {tr:.4f} | val {vl:.4f}")
         wandb.log({'epoch':ep,'train_loss':tr,'val_loss':vl})
         torch.save({'epoch':ep,'model':model.state_dict(),
                     'optim':optimizer.state_dict(),'best_val':best_val},
@@ -213,7 +221,7 @@ def train_radar_model(
         if vl < best_val:
             best_val = vl
             torch.save(model.state_dict(), ckpt_best)
-            print("  🏆 new best saved")
+            print("New best saved")
             wandb.log({'best_val_loss':best_val})
 
     print("Done. Checkpoints in", save_dir.resolve())
@@ -253,8 +261,8 @@ def predict_validation_set(
         Fraction of data used for training split (default: 0.8).
     batch_size : int, optional
         Batch size for inference (default: 4).
-    hidden_dims : tuple of int, optional
-        Hidden channel sizes for each ConvLSTM layer (default: (64, 64)).
+    hidden_dims : list or tuple of int, optional
+        List specifying hidden channel size for each ConvLSTM layer (e.g., [32, 64, 128, 32]).
     kernel_size : int, optional
         Convolution kernel size (default: 3).
     which : str, optional
@@ -311,3 +319,47 @@ def predict_validation_set(
         print("Saved val_preds_dBZ.npy + val_targets_dBZ.npy →", run_dir)
 
     return pred_all, tgt_all
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train ConvLSTM radar forecasting model")
+    parser.add_argument("--save_dir", type=str, required=True, help="Directory to save model checkpoints and stats")
+    parser.add_argument("--hidden_dims", type=str, required=True, help="Hidden dimensions as tuple, e.g., (64, 64)")
+    parser.add_argument("--kernel_size", type=int, required=True, help="Kernel size (must be odd number)")
+
+    # Optional arguments
+    parser.add_argument("--npy_path", type=str, default="Data/ZH_radar_dataset.npy", help="Path to input .npy radar file")
+    parser.add_argument("--seq_len_in", type=int, default=10, help="Input sequence length (default: 10)")
+    parser.add_argument("--seq_len_out", type=int, default=1, help="Output sequence length (default: 1)")
+    parser.add_argument("--train_frac", type=float, default=0.6, help="Training fraction (default: 0.8)")
+    parser.add_argument("--batch_size", type=int, default=1, help="Batch size (default: 4)")
+    parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate (default: 2e-4)")
+    parser.add_argument("--epochs", type=int, default=15, help="Number of epochs (default: 15)")
+    parser.add_argument("--device", type=str, default='cuda', help="Device to train on ('cuda' or 'cpu')")
+
+    args = parser.parse_args()
+
+    import ast
+    try:
+        hidden_dims = ast.literal_eval(args.hidden_dims)
+        if not isinstance(hidden_dims, (tuple, list)):
+            raise ValueError
+    except Exception:
+        raise ValueError("hidden_dims must be a tuple or list, like (64,64) or [64,64]")
+
+    if args.kernel_size % 2 == 0:
+        raise ValueError("kernel_size must be an odd integer.")
+
+    train_radar_model(
+        npy_path=args.npy_path,
+        save_dir=args.save_dir,
+        seq_len_in=args.seq_len_in,
+        seq_len_out=args.seq_len_out,
+        train_frac=args.train_frac,
+        batch_size=args.batch_size,
+        lr=args.lr,
+        hidden_dims=hidden_dims,
+        kernel_size=args.kernel_size,
+        epochs=args.epochs,
+        device=args.device
+    )
