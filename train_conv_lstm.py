@@ -80,6 +80,25 @@ class ConvLSTM(nn.Module):
         return self.to_out(xt)
 
 
+# Weighted MSE loss
+
+def weighted_mse_loss(pred, target, threshold=0.40, weight_high=10.0):
+    """
+    Weighted MSE that emphasizes high reflectivity areas (e.g., >40 dBZ in original scale).
+    Assumes pred and target are normalized to [0,1].
+
+    Parameters:
+    -----------
+    threshold: float
+        Normalized reflectivity threshold (e.g., 0.40 for normalized reflectivity between 0 and 1).
+    weight_high: float
+        Weight multiplier for pixels where true > threshold.
+    """
+    weight = torch.ones_like(target)
+    weight[target > threshold] = weight_high
+    return ((pred - target) ** 2 * weight).mean()
+
+
 # Training function
 
 def train_radar_model(
@@ -94,7 +113,10 @@ def train_radar_model(
     hidden_dims: tuple = (64,64),
     kernel_size: int = 3,
     epochs: int = 15,
-    device: str = None
+    device: str = "cuda" ,
+    loss_name: str = "mse",
+    loss_weight_thresh: float = 0.40,
+    loss_weight_high: float = 10.0,
 ):
     """
     Train a ConvLSTM radar forecasting model.
@@ -123,6 +145,12 @@ def train_radar_model(
         Number of training epochs (default: 15).
     device : str, optional
         Device to run training on ('cuda' or 'cpu'); defaults to 'cuda' if available.
+    loss_name : str, optional
+        Loss function to use; either 'mse' or 'weighted_mse' (default: 'mse').
+    loss_weight_thresh : float, optional (used for weighted_mse)
+        Normalized reflectivity threshold (e.g., 0.40 for normalized reflectivity between 0 and 1. Equivalent to 40 dBZ in original scale).
+    loss_weight_high : float, optional (used for weighted_mse)
+        Weight multiplier for pixels where true > threshold.
 
     Returns
     -------
@@ -159,7 +187,16 @@ def train_radar_model(
     # model, optimizer, loss
     model     = ConvLSTM(in_ch=C, hidden_dims=hidden_dims, kernel=kernel_size).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    criterion = nn.MSELoss()
+    if loss_name == "mse":
+        criterion = nn.MSELoss()
+    elif loss_name == "weighted_mse":
+        criterion = lambda pred, tgt: weighted_mse_loss(
+            pred, tgt,
+            threshold=loss_weight_thresh,
+            weight_high=loss_weight_high
+        )
+    else:
+        raise ValueError(f"Unknown loss function: {loss_name}")
 
     # checkpoints
     ckpt_latest = save_dir/"latest.pt"
@@ -191,7 +228,10 @@ def train_radar_model(
             'hidden_dims': hidden_dims,
             'kernel_size': kernel_size,
             'epochs': epochs,
-            'device': device
+            'device': device,
+            'loss_name': loss_name,
+            'loss_weight_thresh': loss_weight_thresh,
+            'loss_weight_high': loss_weight_high
         }
     )
     wandb.watch(model)
@@ -228,7 +268,34 @@ def train_radar_model(
     wandb.finish()
 
 
-# Predict entire validation set (and undoes scaling)
+def compute_mse_by_ranges(pred, target, ranges):
+    """
+    Compute MSE for different reflectivity ranges.
+    
+    Parameters:
+    -----------
+    pred: np.ndarray
+        Predicted values
+    target: np.ndarray
+        Ground truth values
+    ranges: list of tuples
+        List of (min, max) ranges to compute MSE for
+        
+    Returns:
+    --------
+    dict
+        Dictionary with MSE values for each range
+    """
+    mse_by_range = {}
+    for r_min, r_max in ranges:
+        mask = (target >= r_min) & (target < r_max)
+        if np.any(mask):
+            mse = np.mean((pred[mask] - target[mask]) ** 2)
+            mse_by_range[f"mse_{r_min}_{r_max}"] = mse
+        else:
+            mse_by_range[f"mse_{r_min}_{r_max}"] = np.nan
+    return mse_by_range
+
 
 def predict_validation_set(
     npy_path: str,
@@ -313,6 +380,17 @@ def predict_validation_set(
 
     pred_all = np.concatenate(preds,axis=0)
     tgt_all  = np.concatenate(gts,axis=0)
+    
+    # Compute MSE for different reflectivity ranges
+    ranges = [(0, 20), (20, 35), (35, 45), (45, 100)]
+    mse_by_range = compute_mse_by_ranges(pred_all, tgt_all, ranges)
+    
+    # Save MSE metrics
+    np.savez(run_dir/"mse_by_range.npz", **mse_by_range)
+    print("MSE by reflectivity range:")
+    for range_name, mse in mse_by_range.items():
+        print(f"{range_name}: {mse:.4f}")
+    
     if save_arrays:
         np.save(run_dir/"val_preds_dBZ.npy",   pred_all)
         np.save(run_dir/"val_targets_dBZ.npy", tgt_all)
@@ -324,7 +402,7 @@ def predict_validation_set(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train ConvLSTM radar forecasting model")
     parser.add_argument("--save_dir", type=str, required=True, help="Directory to save model checkpoints and stats")
-    parser.add_argument("--hidden_dims", type=str, required=True, help="Hidden dimensions as tuple or list, e.g., (64, 64) or [64,64]")
+    parser.add_argument("--hidden_dims", type=str, required=True, help="Hidden dimensions as tuple, e.g., (64, 64)")
     parser.add_argument("--kernel_size", type=int, required=True, help="Kernel size (must be odd number)")
 
     # Optional arguments
@@ -336,6 +414,11 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate (default: 2e-4)")
     parser.add_argument("--epochs", type=int, default=15, help="Number of epochs (default: 15)")
     parser.add_argument("--device", type=str, default='cuda', help="Device to train on ('cuda' or 'cpu')")
+    parser.add_argument("--loss_name", type=str, default="mse", help="Loss function: mse or weighted_mse")
+    parser.add_argument("--loss_weight_thresh", type=float, default=0.40,
+                    help="Threshold in normalized space to apply higher loss weighting (default: 0.40)")
+    parser.add_argument("--loss_weight_high", type=float, default=10.0,
+                        help="Weight multiplier for pixels above threshold (default: 10.0)")
 
     args = parser.parse_args()
 
@@ -361,5 +444,8 @@ if __name__ == "__main__":
         hidden_dims=hidden_dims,
         kernel_size=args.kernel_size,
         epochs=args.epochs,
-        device=args.device
+        device=args.device,
+        loss_name=args.loss_name,
+        loss_weight_thresh=args.loss_weight_thresh,
+        loss_weight_high=args.loss_weight_high,
     )
