@@ -1,0 +1,16 @@
+{"time":"2025-04-27T09:56:06.182023458+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250427_095605-run3/logs/debug-core.log"}
+{"time":"2025-04-27T09:56:06.855178676+02:00","level":"INFO","msg":"created new stream","id":"run3"}
+{"time":"2025-04-27T09:56:06.855202592+02:00","level":"INFO","msg":"stream: started","id":"run3"}
+{"time":"2025-04-27T09:56:06.855307631+02:00","level":"INFO","msg":"sender: started","stream_id":"run3"}
+{"time":"2025-04-27T09:56:06.855326101+02:00","level":"INFO","msg":"handler: started","stream_id":"run3"}
+{"time":"2025-04-27T09:56:06.855307906+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"run3"}
+{"time":"2025-04-27T09:56:07.804313691+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-04-27T10:54:48.770384003+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-04-27T10:54:48.770422293+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-04-27T10:54:49.766906672+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-04-27T10:54:49.771934005+02:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading history steps 79-80, summary","runtime_seconds":0.004935922}],"total_operations":1}}
+{"time":"2025-04-27T10:54:50.030977262+02:00","level":"INFO","msg":"stream: closing","id":"run3"}
+{"time":"2025-04-27T10:54:50.03098882+02:00","level":"INFO","msg":"handler: closed","stream_id":"run3"}
+{"time":"2025-04-27T10:54:50.030994451+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"run3"}
+{"time":"2025-04-27T10:54:50.031061741+02:00","level":"INFO","msg":"sender: closed","stream_id":"run3"}
+{"time":"2025-04-27T10:54:50.032355053+02:00","level":"INFO","msg":"stream: closed","id":"run3"}

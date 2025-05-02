@@ -1,0 +1,59 @@
+2025-04-28 12:13:48,893 INFO    MainThread:50323 [wandb_init.py:setup_run_log_directory():724] Logging user logs to /home/ra65puy/Documents/Radar-Consulting/wandb/run-20250428_121348-wandb_test_2/logs/debug.log
+2025-04-28 12:13:48,893 INFO    MainThread:50323 [wandb_init.py:setup_run_log_directory():725] Logging internal logs to /home/ra65puy/Documents/Radar-Consulting/wandb/run-20250428_121348-wandb_test_2/logs/debug-internal.log
+2025-04-28 12:13:48,893 INFO    MainThread:50323 [wandb_init.py:init():852] calling init triggers
+2025-04-28 12:13:48,893 INFO    MainThread:50323 [wandb_init.py:init():857] wandb.init called with sweep_config: {}
+config: {'seq_len_in': 10, 'train_frac': 0.05, 'batch_size': 1, 'lr': 0.0002, 'hidden_dims': [16, 16, 16], 'kernel_size': 3, 'epochs': 4, 'device': 'cuda', '_wandb': {}}
+2025-04-28 12:13:48,897 INFO    MainThread:50323 [wandb_run.py:_finish():2314] finishing run johnpierrew-Ludwig MaximilianUniversity of Munich/radar-forecasting/wandb_test_2
+2025-04-28 12:13:49,696 INFO    MainThread:50323 [jupyter.py:save_history():477] not saving jupyter history
+2025-04-28 12:13:49,696 INFO    MainThread:50323 [jupyter.py:save_ipynb():401] not saving jupyter notebook
+2025-04-28 12:13:49,696 INFO    MainThread:50323 [wandb_init.py:_jupyter_teardown():628] cleaning up jupyter logic
+2025-04-28 12:13:49,697 INFO    MainThread:50323 [wandb_run.py:_atexit_cleanup():2531] got exitcode: 0
+2025-04-28 12:13:49,698 INFO    MainThread:50323 [wandb_run.py:_restore():2513] restore
+2025-04-28 12:13:49,698 INFO    MainThread:50323 [wandb_run.py:_restore():2519] restore done
+2025-04-28 12:14:27,267 WARNING MainThread:50323 [wandb_init.py:init():1654] [no run ID] interrupted
+Traceback (most recent call last):
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/wandb_init.py", line 1650, in init
+    return wi.init(run_settings, run_config, run_printer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/wandb_init.py", line 873, in init
+    self._wl.finish_all_active_runs()
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/wandb_setup.py", line 150, in finish_all_active_runs
+    run.finish()
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 406, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 503, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 451, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 2302, in finish
+    return self._finish(exit_code)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 406, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 2330, in _finish
+    self._atexit_cleanup(exit_code=exit_code)
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 2543, in _atexit_cleanup
+    self._on_finish()
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 2799, in _on_finish
+    wait_with_progress(
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/mailbox/wait_with_progress.py", line 24, in wait_with_progress
+    return wait_all_with_progress(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/mailbox/wait_with_progress.py", line 87, in wait_all_with_progress
+    return asyncio_compat.run(progress_loop_with_timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/wandb/sdk/lib/asyncio_compat.py", line 30, in run
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/concurrent/futures/_base.py", line 451, in result
+    self._condition.wait(timeout)
+  File "/home/ra65puy/miniconda3/lib/python3.12/threading.py", line 355, in wait
+    waiter.acquire()
+KeyboardInterrupt
+2025-04-28 12:23:37,620 INFO    MainThread:50323 [wandb_init.py:_post_run_cell_hook():613] [no run ID] resuming backend
+2025-04-28 12:25:15,049 INFO    MainThread:50323 [jupyter.py:save_ipynb():401] [no run ID] not saving jupyter notebook
+2025-04-28 12:25:15,051 INFO    MainThread:50323 [wandb_init.py:_pre_run_cell_hook():602] [no run ID] pausing backend

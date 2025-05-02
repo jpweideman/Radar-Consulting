@@ -1,0 +1,10 @@
+{"time":"2025-04-28T12:23:33.143572224+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250428_122332-(32,64,128,32)_4/logs/debug-core.log"}
+{"time":"2025-04-28T12:23:33.55495355+02:00","level":"INFO","msg":"created new stream","id":"(32,64,128,32)_4"}
+{"time":"2025-04-28T12:23:33.555018451+02:00","level":"INFO","msg":"stream: started","id":"(32,64,128,32)_4"}
+{"time":"2025-04-28T12:23:33.55515057+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"(32,64,128,32)_4"}
+{"time":"2025-04-28T12:23:33.555159638+02:00","level":"INFO","msg":"sender: started","stream_id":"(32,64,128,32)_4"}
+{"time":"2025-04-28T12:23:33.555247328+02:00","level":"INFO","msg":"handler: started","stream_id":"(32,64,128,32)_4"}
+{"time":"2025-04-28T12:23:34.12092967+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-04-28T12:24:49.758171428+02:00","level":"ERROR","msg":"HTTP error","status":404,"method":"POST","url":"https://api.wandb.ai/files/johnpierrew-Ludwig%20MaximilianUniversity%20of%20Munich/radar-forecasting/%2832,64,128,32%29_4/file_stream"}
+{"time":"2025-04-28T12:24:49.758273981+02:00","level":"ERROR+4","msg":"filestream: fatal error: filestream: failed to upload: 404 Not Found path=files/johnpierrew-Ludwig MaximilianUniversity of Munich/radar-forecasting/(32,64,128,32)_4/file_stream: {\"error\":\"run radar-forecasting/(32,64,128,32)_4 not found while streaming file\"}"}
+{"time":"2025-04-28T12:25:15.054756882+02:00","level":"INFO","msg":"Pausing system monitor"}

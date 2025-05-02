@@ -1,0 +1,12 @@
+numpy
+matplotlib
+tensorflow
+wradlib
+xarray
+cartopy
+xradar
+arm_pyart
+seaborn
+tqdm
+scikit-learn
+scikit-image

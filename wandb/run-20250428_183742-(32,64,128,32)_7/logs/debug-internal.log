@@ -1,0 +1,16 @@
+{"time":"2025-04-28T18:37:42.844909235+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250428_183742-(32,64,128,32)_7/logs/debug-core.log"}
+{"time":"2025-04-28T18:37:43.248327601+02:00","level":"INFO","msg":"created new stream","id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:37:43.248405596+02:00","level":"INFO","msg":"stream: started","id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:37:43.24851249+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:37:43.248579471+02:00","level":"INFO","msg":"handler: started","stream_id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:37:43.248689451+02:00","level":"INFO","msg":"sender: started","stream_id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:37:43.843796115+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-04-29T00:59:25.793682724+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-04-29T00:59:25.793762964+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-04-29T00:59:26.636352048+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-04-29T00:59:26.79629736+02:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading history steps 46-46, summary, console lines 102-103","runtime_seconds":0.159587543}],"total_operations":1}}
+{"time":"2025-04-29T00:59:26.848270759+02:00","level":"INFO","msg":"stream: closing","id":"(32,64,128,32)_7"}
+{"time":"2025-04-29T00:59:26.848297505+02:00","level":"INFO","msg":"handler: closed","stream_id":"(32,64,128,32)_7"}
+{"time":"2025-04-29T00:59:26.848307924+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"(32,64,128,32)_7"}
+{"time":"2025-04-29T00:59:26.848400718+02:00","level":"INFO","msg":"sender: closed","stream_id":"(32,64,128,32)_7"}
+{"time":"2025-04-29T00:59:26.849389893+02:00","level":"INFO","msg":"stream: closed","id":"(32,64,128,32)_7"}

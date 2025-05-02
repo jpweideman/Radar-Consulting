@@ -1,0 +1,7 @@
+{"time":"2025-04-28T12:08:56.099634502+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250428_120855-wandb_test_2/logs/debug-core.log"}
+{"time":"2025-04-28T12:08:56.524479994+02:00","level":"INFO","msg":"created new stream","id":"wandb_test_2"}
+{"time":"2025-04-28T12:08:56.524541921+02:00","level":"INFO","msg":"stream: started","id":"wandb_test_2"}
+{"time":"2025-04-28T12:08:56.524637895+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"wandb_test_2"}
+{"time":"2025-04-28T12:08:56.524734869+02:00","level":"INFO","msg":"sender: started","stream_id":"wandb_test_2"}
+{"time":"2025-04-28T12:08:56.524768932+02:00","level":"INFO","msg":"handler: started","stream_id":"wandb_test_2"}
+{"time":"2025-04-28T12:08:56.726050396+02:00","level":"ERROR","msg":"send: sendRun: failed to update run state: no data but must resume"}

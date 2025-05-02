@@ -1,0 +1,16 @@
+{"time":"2025-04-28T16:15:55.803407385+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250428_161555-terminal_test_50/logs/debug-core.log"}
+{"time":"2025-04-28T16:15:56.206239707+02:00","level":"INFO","msg":"created new stream","id":"terminal_test_50"}
+{"time":"2025-04-28T16:15:56.206280347+02:00","level":"INFO","msg":"stream: started","id":"terminal_test_50"}
+{"time":"2025-04-28T16:15:56.206354327+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"terminal_test_50"}
+{"time":"2025-04-28T16:15:56.206567318+02:00","level":"INFO","msg":"sender: started","stream_id":"terminal_test_50"}
+{"time":"2025-04-28T16:15:56.206571188+02:00","level":"INFO","msg":"handler: started","stream_id":"terminal_test_50"}
+{"time":"2025-04-28T16:15:56.787146989+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-04-28T16:16:45.0417545+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-04-28T16:16:45.04178975+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-04-28T16:16:46.043092862+02:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading config.yaml","runtime_seconds":0.201216801,"progress":"759B/759B"}],"total_operations":1}}
+{"time":"2025-04-28T16:16:46.072173082+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-04-28T16:16:46.537328106+02:00","level":"INFO","msg":"stream: closing","id":"terminal_test_50"}
+{"time":"2025-04-28T16:16:46.537339586+02:00","level":"INFO","msg":"handler: closed","stream_id":"terminal_test_50"}
+{"time":"2025-04-28T16:16:46.537352326+02:00","level":"INFO","msg":"sender: closed","stream_id":"terminal_test_50"}
+{"time":"2025-04-28T16:16:46.537345756+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"terminal_test_50"}
+{"time":"2025-04-28T16:16:46.540877493+02:00","level":"INFO","msg":"stream: closed","id":"terminal_test_50"}

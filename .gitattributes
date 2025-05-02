@@ -1,0 +1,5 @@
+*.npy filter=lfs diff=lfs merge=lfs -text
+*.pt filter=lfs diff=lfs merge=lfs -text
+*.ipynb filter=lfs diff=lfs merge=lfs -text
+convLSTM_pytorch.ipynb filter=lfs diff=lfs merge=lfs -text
+
