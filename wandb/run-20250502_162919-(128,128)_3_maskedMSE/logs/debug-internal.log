@@ -1,0 +1,16 @@
+{"time":"2025-05-02T16:29:19.488967757+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250502_162919-(128,128)_3_maskedMSE/logs/debug-core.log"}
+{"time":"2025-05-02T16:29:19.899617899+02:00","level":"INFO","msg":"created new stream","id":"(128,128)_3_maskedMSE"}
+{"time":"2025-05-02T16:29:19.899692684+02:00","level":"INFO","msg":"stream: started","id":"(128,128)_3_maskedMSE"}
+{"time":"2025-05-02T16:29:19.899789084+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"(128,128)_3_maskedMSE"}
+{"time":"2025-05-02T16:29:19.899992442+02:00","level":"INFO","msg":"handler: started","stream_id":"(128,128)_3_maskedMSE"}
+{"time":"2025-05-02T16:29:19.89989548+02:00","level":"INFO","msg":"sender: started","stream_id":"(128,128)_3_maskedMSE"}
+{"time":"2025-05-02T16:29:20.417708631+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-05-02T17:07:33.327064316+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-05-02T17:07:33.327935334+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-05-02T17:07:34.32989634+02:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading config.yaml","runtime_seconds":0.094548829,"progress":"849B/849B"}],"total_operations":1}}
+{"time":"2025-05-02T17:07:34.456944433+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-05-02T17:07:34.689404673+02:00","level":"INFO","msg":"stream: closing","id":"(128,128)_3_maskedMSE"}
+{"time":"2025-05-02T17:07:34.690243503+02:00","level":"INFO","msg":"handler: closed","stream_id":"(128,128)_3_maskedMSE"}
+{"time":"2025-05-02T17:07:34.690296188+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"(128,128)_3_maskedMSE"}
+{"time":"2025-05-02T17:07:34.690378749+02:00","level":"INFO","msg":"sender: closed","stream_id":"(128,128)_3_maskedMSE"}
+{"time":"2025-05-02T17:07:34.693534814+02:00","level":"INFO","msg":"stream: closed","id":"(128,128)_3_maskedMSE"}

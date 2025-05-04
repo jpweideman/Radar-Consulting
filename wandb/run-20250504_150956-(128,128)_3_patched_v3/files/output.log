@@ -1,0 +1,3 @@
+[23/24] train 0.0089 | val 0.0196
+[24/24] train 0.0086 | val 0.0186
+Done. Checkpoints in /home/ra65puy/Documents/Radar-Consulting/runs/(128,128)_3_patched_v3

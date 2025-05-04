@@ -1,0 +1,16 @@
+{"time":"2025-05-04T15:08:05.595526544+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250504_150805-(128,128)_3_patched_v3/logs/debug-core.log"}
+{"time":"2025-05-04T15:08:06.08480184+02:00","level":"INFO","msg":"created new stream","id":"(128,128)_3_patched_v3"}
+{"time":"2025-05-04T15:08:06.08484867+02:00","level":"INFO","msg":"stream: started","id":"(128,128)_3_patched_v3"}
+{"time":"2025-05-04T15:08:06.08489623+02:00","level":"INFO","msg":"handler: started","stream_id":"(128,128)_3_patched_v3"}
+{"time":"2025-05-04T15:08:06.08490153+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"(128,128)_3_patched_v3"}
+{"time":"2025-05-04T15:08:06.08492643+02:00","level":"INFO","msg":"sender: started","stream_id":"(128,128)_3_patched_v3"}
+{"time":"2025-05-04T15:08:06.488320358+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-05-04T15:08:40.879799291+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-05-04T15:08:40.879849741+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-05-04T15:08:41.846953863+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-05-04T15:08:41.881134461+02:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading history steps 27-31, summary, console lines 38-43","runtime_seconds":0.034024567}],"total_operations":1}}
+{"time":"2025-05-04T15:08:42.072034389+02:00","level":"INFO","msg":"stream: closing","id":"(128,128)_3_patched_v3"}
+{"time":"2025-05-04T15:08:42.072048469+02:00","level":"INFO","msg":"handler: closed","stream_id":"(128,128)_3_patched_v3"}
+{"time":"2025-05-04T15:08:42.072057289+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"(128,128)_3_patched_v3"}
+{"time":"2025-05-04T15:08:42.072082809+02:00","level":"INFO","msg":"sender: closed","stream_id":"(128,128)_3_patched_v3"}
+{"time":"2025-05-04T15:08:42.074701324+02:00","level":"INFO","msg":"stream: closed","id":"(128,128)_3_patched_v3"}

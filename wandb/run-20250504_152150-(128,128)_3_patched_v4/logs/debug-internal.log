@@ -1,0 +1,16 @@
+{"time":"2025-05-04T15:21:51.077503144+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250504_152150-(128,128)_3_patched_v4/logs/debug-core.log"}
+{"time":"2025-05-04T15:21:51.469832323+02:00","level":"INFO","msg":"created new stream","id":"(128,128)_3_patched_v4"}
+{"time":"2025-05-04T15:21:51.469884964+02:00","level":"INFO","msg":"stream: started","id":"(128,128)_3_patched_v4"}
+{"time":"2025-05-04T15:21:51.469925994+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"(128,128)_3_patched_v4"}
+{"time":"2025-05-04T15:21:51.469947644+02:00","level":"INFO","msg":"handler: started","stream_id":"(128,128)_3_patched_v4"}
+{"time":"2025-05-04T15:21:51.469982624+02:00","level":"INFO","msg":"sender: started","stream_id":"(128,128)_3_patched_v4"}
+{"time":"2025-05-04T15:21:51.945091991+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-05-04T15:30:38.44290612+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-05-04T15:30:38.44294289+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-05-04T15:30:39.197223333+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-05-04T15:30:39.41398692+02:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2025-05-04T15:30:39.41829473+02:00","level":"INFO","msg":"stream: closing","id":"(128,128)_3_patched_v4"}
+{"time":"2025-05-04T15:30:39.41830253+02:00","level":"INFO","msg":"handler: closed","stream_id":"(128,128)_3_patched_v4"}
+{"time":"2025-05-04T15:30:39.41830768+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"(128,128)_3_patched_v4"}
+{"time":"2025-05-04T15:30:39.41831307+02:00","level":"INFO","msg":"sender: closed","stream_id":"(128,128)_3_patched_v4"}
+{"time":"2025-05-04T15:30:39.419447063+02:00","level":"INFO","msg":"stream: closed","id":"(128,128)_3_patched_v4"}
