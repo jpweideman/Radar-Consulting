@@ -1,0 +1,15 @@
+{"time":"2025-05-05T16:31:19.082604246+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250505_163118-unet_convlstm_deep_lstm/logs/debug-core.log"}
+{"time":"2025-05-05T16:31:19.511826387+02:00","level":"INFO","msg":"created new stream","id":"unet_convlstm_deep_lstm"}
+{"time":"2025-05-05T16:31:19.511913721+02:00","level":"INFO","msg":"stream: started","id":"unet_convlstm_deep_lstm"}
+{"time":"2025-05-05T16:31:19.512024731+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"unet_convlstm_deep_lstm"}
+{"time":"2025-05-05T16:31:19.51205774+02:00","level":"INFO","msg":"sender: started","stream_id":"unet_convlstm_deep_lstm"}
+{"time":"2025-05-05T16:31:19.512102162+02:00","level":"INFO","msg":"handler: started","stream_id":"unet_convlstm_deep_lstm"}
+{"time":"2025-05-05T16:31:20.105016529+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-05-05T16:31:25.784559517+02:00","level":"INFO","msg":"stream: closing","id":"unet_convlstm_deep_lstm"}
+{"time":"2025-05-05T16:31:25.784596119+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-05-05T16:31:25.784700806+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-05-05T16:31:26.412673036+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-05-05T16:31:26.616719211+02:00","level":"INFO","msg":"handler: closed","stream_id":"unet_convlstm_deep_lstm"}
+{"time":"2025-05-05T16:31:26.616773447+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"unet_convlstm_deep_lstm"}
+{"time":"2025-05-05T16:31:26.616841191+02:00","level":"INFO","msg":"sender: closed","stream_id":"unet_convlstm_deep_lstm"}
+{"time":"2025-05-05T16:31:26.618706678+02:00","level":"INFO","msg":"stream: closed","id":"unet_convlstm_deep_lstm"}
