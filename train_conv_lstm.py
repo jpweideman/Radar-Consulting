@@ -27,6 +27,35 @@ class RadarWindowDataset(Dataset):
         return torch.from_numpy(self.X[i]), torch.from_numpy(self.Y[i])
 
 
+class PatchRadarWindowDataset(Dataset):
+    def __init__(self, cube_norm, seq_in, seq_out, patch_size=64, patch_stride=64, patch_thresh=0.4, patch_frac=0.15):
+        # cube_norm: np.ndarray shape (T,C,H,W) in [0,1]
+        self.patches = []  # List of (t, y, x, X_patch, Y_patch)
+        T, C, H, W = cube_norm.shape
+        last = T - seq_in - seq_out + 1
+        for t in range(last):
+            X_seq = cube_norm[t:t+seq_in]  # (seq_in, C, H, W)
+            Y_seq = cube_norm[t+seq_in:t+seq_in+seq_out]  # (seq_out, C, H, W)
+            # Slide over spatial dimensions
+            for y in range(0, H - patch_size + 1, patch_stride):
+                for x in range(0, W - patch_size + 1, patch_stride):
+                    X_patch = X_seq[:, :, y:y+patch_size, x:x+patch_size]  # (seq_in, C, patch_size, patch_size)
+                    Y_patch = Y_seq[:, :, y:y+patch_size, x:x+patch_size]  # (seq_out, C, patch_size, patch_size)
+                    # Check if at least patch_frac of pixels in patch exceed threshold (in any channel, any time in Y)
+                    total_pix = Y_patch.size
+                    n_above = (Y_patch > patch_thresh).sum()
+                    if n_above / total_pix >= patch_frac:
+                        self.patches.append((t, y, x, X_patch, Y_patch.squeeze(0)))
+
+    def __len__(self):
+        return len(self.patches)
+
+    def __getitem__(self, i):
+        t, y, x, X_patch, Y_patch = self.patches[i]
+        # Return patch, target, and location info
+        return torch.from_numpy(X_patch), torch.from_numpy(Y_patch), t, y, x
+
+
 # ConvLSTM building blocks
 class ConvLSTMCell(nn.Module):
     def __init__(self, in_ch, hid_ch, kernel=3):
@@ -117,6 +146,11 @@ def train_radar_model(
     loss_name: str = "mse",
     loss_weight_thresh: float = 0.40,
     loss_weight_high: float = 10.0,
+    patch_size: int = 64,
+    patch_stride: int = 64,
+    patch_thresh: float = 0.4,
+    patch_frac: float = 0.15,
+    use_patches: bool = False,
 ):
     """
     Train a ConvLSTM radar forecasting model.
@@ -146,11 +180,21 @@ def train_radar_model(
     device : str, optional
         Device to run training on ('cuda' or 'cpu'); defaults to 'cuda' if available.
     loss_name : str, optional
-        Loss function to use; either 'mse' or 'weighted_mse' (default: 'mse').
-    loss_weight_thresh : float, optional (used for weighted_mse)
+        Loss function to use; either 'mse', 'weighted_mse'.
+    loss_weight_thresh : float, optional (used for weighted_mse and masked_mse)
         Normalized reflectivity threshold (e.g., 0.40 for normalized reflectivity between 0 and 1. Equivalent to 40 dBZ in original scale).
     loss_weight_high : float, optional (used for weighted_mse)
         Weight multiplier for pixels where true > threshold.
+    patch_size : int, optional
+        Size of spatial patches to extract (default: 64).
+    patch_stride : int, optional
+        Stride for patch extraction (default: 64).
+    patch_thresh : float, optional
+        Threshold for extracting patches (default: 0.4).
+    patch_frac : float, optional
+        Minimum fraction of pixels in patch above threshold (default: 0.15).
+    use_patches : bool, optional
+        Whether to use patch-based training (default: False).
 
     Returns
     -------
@@ -177,12 +221,30 @@ def train_radar_model(
     cube_n = cube.astype(np.float32) / (maxv + eps)
 
     # DataLoaders
-    full_ds  = RadarWindowDataset(cube_n, seq_len_in, seq_len_out)
-    train_ds = Subset(full_ds, list(range(0, n_train)))
-    val_ds   = Subset(full_ds, list(range(n_train, n_total)))
-    train_dl = DataLoader(train_ds, batch_size, shuffle=False)
-    val_dl   = DataLoader(val_ds,   batch_size, shuffle=False)
-    print(f"Samples  train={len(train_ds)}  val={len(val_ds)}")
+    if use_patches:
+        full_ds  = PatchRadarWindowDataset(cube_n, seq_len_in, seq_len_out, patch_size, patch_stride, patch_thresh, patch_frac)
+        # Split by time index (t) for train/val
+        train_idx = []
+        val_idx = []
+        n_total = T - seq_len_in - seq_len_out + 1
+        n_train = int(n_total * train_frac)
+        for i, (t, y, x, _, _) in enumerate(full_ds.patches):
+            if t < n_train:
+                train_idx.append(i)
+            else:
+                val_idx.append(i)
+        train_ds = Subset(full_ds, train_idx)
+        val_ds   = Subset(full_ds, val_idx)
+        train_dl = DataLoader(train_ds, batch_size, shuffle=True)
+        val_dl   = DataLoader(val_ds,   batch_size, shuffle=False)
+        print(f"Patch-based: train={len(train_ds)}  val={len(val_ds)}")
+    else:
+        full_ds  = RadarWindowDataset(cube_n, seq_len_in, seq_len_out)
+        train_ds = Subset(full_ds, list(range(0, n_train)))
+        val_ds   = Subset(full_ds, list(range(n_train, n_total)))
+        train_dl = DataLoader(train_ds, batch_size, shuffle=False)
+        val_dl   = DataLoader(val_ds,   batch_size, shuffle=False)
+        print(f"Samples  train={len(train_ds)}  val={len(val_ds)}")
 
     # model, optimizer, loss
     model     = ConvLSTM(in_ch=C, hidden_dims=hidden_dims, kernel=kernel_size).to(device)
@@ -203,6 +265,7 @@ def train_radar_model(
     ckpt_best   = save_dir/"best_val.pt"
     best_val    = float('inf')
     start_ep = 1
+    epochs_since_improvement = 0
     if ckpt_latest.exists():
         st = torch.load(ckpt_latest, map_location=device)
         model.load_state_dict(st['model'])
@@ -231,7 +294,12 @@ def train_radar_model(
             'device': device,
             'loss_name': loss_name,
             'loss_weight_thresh': loss_weight_thresh,
-            'loss_weight_high': loss_weight_high
+            'loss_weight_high': loss_weight_high,
+            'patch_size': patch_size,
+            'patch_stride': patch_stride,
+            'patch_thresh': patch_thresh,
+            'patch_frac': patch_frac,
+            'use_patches': use_patches
         }
     )
     wandb.watch(model)
@@ -241,8 +309,12 @@ def train_radar_model(
         model.train() if train else model.eval()
         tot=0.0
         with torch.set_grad_enabled(train):
-            for xb,yb in dl:
-                xb,yb = xb.to(device), yb.to(device)
+            for batch in dl:
+                if use_patches:
+                    xb, yb = batch[0], batch[1]  # ignore t, y, x
+                else:
+                    xb, yb = batch
+                xb, yb = xb.to(device), yb.to(device)
                 pred  = model(xb)
                 loss  = criterion(pred, yb)
                 if train:
@@ -263,6 +335,12 @@ def train_radar_model(
             torch.save(model.state_dict(), ckpt_best)
             print("New best saved")
             wandb.log({'best_val_loss':best_val})
+            epochs_since_improvement = 0
+        else:
+            epochs_since_improvement += 1
+        if epochs_since_improvement >= 10:
+            print(f"Early stopping: validation loss did not improve for {epochs_since_improvement} epochs.")
+            break
 
     print("Done. Checkpoints in", save_dir.resolve())
     wandb.finish()
@@ -309,7 +387,7 @@ def predict_validation_set(
     kernel_size: int = 3,
     which: str = "best",
     device: str = None,
-    save_arrays: bool = True
+    save_arrays: bool = True,
 ):
     """
     Run inference on the validation set using a ConvLSTM model from train_radar_model.
@@ -415,10 +493,15 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=15, help="Number of epochs (default: 15)")
     parser.add_argument("--device", type=str, default='cuda', help="Device to train on ('cuda' or 'cpu')")
     parser.add_argument("--loss_name", type=str, default="mse", help="Loss function: mse or weighted_mse")
-    parser.add_argument("--loss_weight_thresh", type=float, default=0.40,
-                    help="Threshold in normalized space to apply higher loss weighting (default: 0.40)")
+    parser.add_argument("--loss_weight_thresh", type=float, default=0.35,
+                    help="Threshold in normalized space to apply higher loss weighting or masking (default: 0.40)")
     parser.add_argument("--loss_weight_high", type=float, default=10.0,
                         help="Weight multiplier for pixels above threshold (default: 10.0)")
+    parser.add_argument("--patch_size", type=int, default=64, help="Size of spatial patches to extract (default: 64)")
+    parser.add_argument("--patch_stride", type=int, default=32, help="Stride for patch extraction (default: 32)")
+    parser.add_argument("--patch_thresh", type=float, default=0.35, help="Threshold for extracting patches (default: 0.4)")
+    parser.add_argument("--patch_frac", type=float, default=0.05, help="Minimum fraction of pixels in patch above threshold (default: 0.05)")
+    parser.add_argument("--use_patches", type=bool, default=True, help="Whether to use patch-based training (default: True)")
 
     args = parser.parse_args()
 
@@ -448,4 +531,9 @@ if __name__ == "__main__":
         loss_name=args.loss_name,
         loss_weight_thresh=args.loss_weight_thresh,
         loss_weight_high=args.loss_weight_high,
+        patch_size=args.patch_size,
+        patch_stride=args.patch_stride,
+        patch_thresh=args.patch_thresh,
+        patch_frac=args.patch_frac,
+        use_patches=args.use_patches,
     )

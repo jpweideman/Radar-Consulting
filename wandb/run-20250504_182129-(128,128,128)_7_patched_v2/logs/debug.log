@@ -21,3 +21,4 @@ config: {'seq_len_in': 10, 'train_frac': 0.6, 'batch_size': 1, 'lr': 0.0002, 'hi
 2025-05-04 18:21:31,114 INFO    MainThread:36473 [wandb_run.py:_redirect():2506] Redirects installed.
 2025-05-04 18:21:31,141 INFO    MainThread:36473 [wandb_init.py:init():1147] run started, returning control to user process
 2025-05-04 18:21:31,142 INFO    MainThread:36473 [wandb_watch.py:_watch():71] Watching
+2025-05-04 18:59:56,528 INFO    MsgRouterThr:36473 [mailbox.py:close():129] [no run ID] Closing mailbox, abandoning 1 handles.
