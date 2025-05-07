@@ -230,3 +230,162 @@ def animate_new_storms(data, new_storms_result):
     ani = animation.FuncAnimation(fig, update, frames=data.shape[0], interval=200)
     return ani
 
+def evaluate_new_storm_predictions(new_storms_pred, new_storms_true, overlap_threshold=0.2):
+    """
+    Compares predicted and true new storm initiations.
+
+    Parameters:
+    - new_storms_pred: list of dicts from detect_new_storm_formations(pred_max_cappi)
+    - new_storms_true: list of dicts from detect_new_storm_formations(true_max_cappi)
+    - overlap_threshold: float, minimum overlap ratio to count as a match
+
+    Returns:
+    - dict with counts:
+        {
+            "correct": int,  # matched at same time
+            "early": int,    # matched one time step before
+            "late": int,     # matched one time step after
+            "false_positives": int,  # predicted storms with no match in ±1 time step
+            "total_true": int,  # total true new storms
+            "total_pred": int,  # total predicted new storms
+            "correct_ratio": float,
+            "anytime_ratio": float,
+            "false_positive_ratio": float,
+        }
+    """
+    # Helper to get mask for a storm contour
+    def contour_to_mask(contour, shape):
+        from matplotlib.path import Path as MplPath
+        # Ensure shape is a 2-tuple
+        if len(shape) == 1:
+            shape = (shape[0], 1)
+        elif len(shape) == 0:
+            shape = (1, 1)
+        xg, yg = np.meshgrid(np.arange(shape[1]), np.arange(shape[0]))
+        coords = np.vstack((xg.ravel(), yg.ravel())).T
+        path = MplPath(np.array(contour))
+        mask = path.contains_points(coords).reshape(shape)
+        return mask
+
+    # Build lookup: time_step -> list of (mask, used_flag)
+    def build_storm_masks(new_storms, data_shape):
+        lookup = {}
+        for entry in new_storms:
+            t = entry["time_step"]
+            masks = []
+            for contour in entry["new_storm_coordinates"]:
+                mask = contour_to_mask(contour, data_shape)
+                masks.append({"mask": mask, "used": False})
+            lookup[t] = masks
+        return lookup
+
+    # Robustly infer data_shape from all contours in true and pred
+    max_x, max_y = 0, 0
+    found = False
+    for storms in (new_storms_true, new_storms_pred):
+        for entry in storms:
+            for contour in entry["new_storm_coordinates"]:
+                arr = np.array(contour)
+                if arr.size == 0:
+                    continue
+                found = True
+                if arr.ndim == 1 and arr.shape[0] == 2:
+                    # Single point
+                    x, y = arr[0], arr[1]
+                    max_x = max(max_x, int(x))
+                    max_y = max(max_y, int(y))
+                elif arr.ndim == 2 and arr.shape[1] == 2:
+                    # Contour
+                    max_x = max(max_x, int(arr[:, 0].max()))
+                    max_y = max(max_y, int(arr[:, 1].max()))
+    if not found:
+        return {"correct": 0, "early": 0, "late": 0, "false_positives": sum(e["new_storm_count"] for e in new_storms_pred), "total_true": 0, "total_pred": sum(e["new_storm_count"] for e in new_storms_pred), "correct_ratio": 0.0, "anytime_ratio": 0.0, "false_positive_ratio": 0.0}
+    data_shape = (max_y + 1, max_x + 1)
+
+    # Build mask lookups
+    pred_lookup = build_storm_masks(new_storms_pred, data_shape)
+    true_lookup = build_storm_masks(new_storms_true, data_shape)
+
+    correct = 0
+    early = 0
+    late = 0
+    matched_pred = set()  # (t, idx)
+    matched_true = set()  # (t, idx)
+
+    # For each true storm, look for matching pred storm in t-1, t, t+1
+    for t, true_storms in true_lookup.items():
+        for i, true_storm in enumerate(true_storms):
+            found = False
+            for dt, label in zip([0, -1, 1], ["correct", "early", "late"]):
+                tt = t + dt
+                if tt in pred_lookup:
+                    for j, pred_storm in enumerate(pred_lookup[tt]):
+                        if (tt, j) in matched_pred:
+                            continue
+                        # Compute overlap: intersection / area of true storm
+                        intersection = np.sum(true_storm["mask"] & pred_storm["mask"])
+                        area_true = np.sum(true_storm["mask"])
+                        if area_true == 0:
+                            continue
+                        overlap = intersection / area_true
+                        if overlap >= overlap_threshold:
+                            if label == "correct":
+                                correct += 1
+                            elif label == "early":
+                                early += 1
+                            elif label == "late":
+                                late += 1
+                            matched_pred.add((tt, j))
+                            matched_true.add((t, i))
+                            found = True
+                            break
+                if found:
+                    break
+
+    # False positives: predicted storms not matched to any true storm in ±1 time step
+    false_positives = 0
+    for t, pred_storms in pred_lookup.items():
+        for j, pred_storm in enumerate(pred_storms):
+            if (t, j) in matched_pred:
+                continue
+            # Check if this pred storm matches any true storm in t-1, t, t+1
+            matched = False
+            for dt in [-1, 0, 1]:
+                tt = t + dt
+                if tt in true_lookup:
+                    for i, true_storm in enumerate(true_lookup[tt]):
+                        if (tt, i) in matched_true:
+                            continue
+                        intersection = np.sum(true_storm["mask"] & pred_storm["mask"])
+                        area_pred = np.sum(pred_storm["mask"])
+                        if area_pred == 0:
+                            continue
+                        overlap = intersection / area_pred
+                        if overlap >= overlap_threshold:
+                            matched = True
+                            break
+                if matched:
+                    break
+            if not matched:
+                false_positives += 1
+
+    total_true = sum(len(v) for v in true_lookup.values())
+    total_pred = sum(len(v) for v in pred_lookup.values())
+
+    # Ratios
+    correct_ratio = correct / total_true if total_true > 0 else 0.0
+    anytime_ratio = (correct + early + late) / total_true if total_true > 0 else 0.0
+    false_positive_ratio = false_positives / total_pred if total_pred > 0 else 0.0
+
+    return {
+        "correct": correct,
+        "early": early,
+        "late": late,
+        "false_positives": false_positives,
+        "total_true": total_true,
+        "total_pred": total_pred,
+        "correct_ratio": correct_ratio,
+        "anytime_ratio": anytime_ratio,
+        "false_positive_ratio": false_positive_ratio,
+    }
+
