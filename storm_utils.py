@@ -248,7 +248,8 @@ def evaluate_new_storm_predictions(new_storms_pred, new_storms_true, overlap_thr
             "false_positives": int,  # predicted storms with no match in ±1 time step
             "total_true": int,  # total true new storms
             "total_pred": int,  # total predicted new storms
-            "correct_ratio": float,
+            "correct_over_true": float,
+            "correct_over_pred": float,
             "anytime_ratio": float,
             "false_positive_ratio": float,
         }
@@ -299,7 +300,7 @@ def evaluate_new_storm_predictions(new_storms_pred, new_storms_true, overlap_thr
                     max_x = max(max_x, int(arr[:, 0].max()))
                     max_y = max(max_y, int(arr[:, 1].max()))
     if not found:
-        return {"correct": 0, "early": 0, "late": 0, "false_positives": sum(e["new_storm_count"] for e in new_storms_pred), "total_true": 0, "total_pred": sum(e["new_storm_count"] for e in new_storms_pred), "correct_ratio": 0.0, "anytime_ratio": 0.0, "false_positive_ratio": 0.0}
+        return {"correct": 0, "early": 0, "late": 0, "false_positives": sum(e["new_storm_count"] for e in new_storms_pred), "total_true": 0, "total_pred": sum(e["new_storm_count"] for e in new_storms_pred), "correct_over_true": 0.0, "correct_over_pred": 0.0, "anytime_ratio": 0.0, "false_positive_ratio": 0.0}
     data_shape = (max_y + 1, max_x + 1)
 
     # Build mask lookups
@@ -373,7 +374,8 @@ def evaluate_new_storm_predictions(new_storms_pred, new_storms_true, overlap_thr
     total_pred = sum(len(v) for v in pred_lookup.values())
 
     # Ratios
-    correct_ratio = correct / total_true if total_true > 0 else 0.0
+    correct_over_true = correct / total_true if total_true > 0 else 0.0
+    correct_over_pred = correct / total_pred if total_pred > 0 else 0.0
     anytime_ratio = (correct + early + late) / total_true if total_true > 0 else 0.0
     false_positive_ratio = false_positives / total_pred if total_pred > 0 else 0.0
 
@@ -384,7 +386,8 @@ def evaluate_new_storm_predictions(new_storms_pred, new_storms_true, overlap_thr
         "false_positives": false_positives,
         "total_true": total_true,
         "total_pred": total_pred,
-        "correct_ratio": correct_ratio,
+        "correct_over_true": correct_over_true,
+        "correct_over_pred": correct_over_pred,
         "anytime_ratio": anytime_ratio,
         "false_positive_ratio": false_positive_ratio,
     }
