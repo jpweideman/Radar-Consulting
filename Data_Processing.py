@@ -50,13 +50,21 @@ def process_one_file(file_path):
 
     return np.stack(processed_scans)  # shape: (14, 360, 240)
 
-# Get all .h5 files
-files = [f for f in os.listdir(data_dir) if f.endswith(".h5")]
+# Recursively find all .h5 files
+files = []
+for root, dirs, filenames in os.walk(data_dir):
+    for fname in filenames:
+        if fname.endswith(".h5"):
+            files.append(os.path.join(root, fname))
+
 print(f"Found {len(files)} HDF5 files to process.")
 
 all_data = []
 
-for fname in tqdm(sorted(files)):
+# Sort files for reproducibility
+files = sorted(files)
+
+for fname in tqdm(files):
     try:
         tensor = process_one_file(fname)  # (14, 360, 240)
         all_data.append(tensor)
@@ -71,7 +79,8 @@ print("Final dataset shape:", dataset.shape)
 np.save("Data/ZH_radar_dataset.npy", dataset)
 print("Saved dataset to Data/ZH_radar_dataset.npy")
 
-# Save the sorted filenames as a .json file
+# Save the sorted filenames as a .json file (relative to data_dir)
+rel_files = [os.path.relpath(f, data_dir) for f in files]
 with open("Data/ZH_radar_filenames.json", "w") as f:
-    json.dump(sorted(files), f)
+    json.dump(rel_files, f)
 print("Saved filenames to Data/ZH_radar_filenames.json") 
