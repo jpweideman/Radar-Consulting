@@ -92,7 +92,8 @@ def detect_storms(data, reflectivity_threshold=45, area_threshold=15, dilation_i
     for t in range(data.shape[0]):
         frame_data = data[t]
         mask = frame_data > reflectivity_threshold
-        dilated_mask = binary_dilation(mask, iterations=dilation_iterations)
+        dilated_mask = binary_dilation(mask, iterations=dilation_iterations)     #each storm region will expand outward by up to dilation_iterations (5) pixels in all directions. The effect:
+                                                                                 #Small gaps between nearby regions may be filled, merging them into a single region.
         contours = find_contours(dilated_mask.astype(float), 0.5)
 
         storms_in_frame = []
@@ -280,7 +281,7 @@ def evaluate_new_storm_predictions(new_storms_pred, new_storms_true, overlap_thr
             lookup[t] = masks
         return lookup
 
-    # Robustly infer data_shape from all contours in true and pred
+    # infer data_shape from all contours in true and pred
     max_x, max_y = 0, 0
     found = False
     for storms in (new_storms_true, new_storms_pred):

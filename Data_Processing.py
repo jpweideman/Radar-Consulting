@@ -2,6 +2,7 @@ import os
 import numpy as np
 import wradlib as wrl
 from tqdm import tqdm  # for progress bar
+import json
 
 # Set WRADLIB_DATA folder
 data_dir = "wradlib_data"
@@ -69,3 +70,8 @@ print("Final dataset shape:", dataset.shape)
 # Save to .npy file
 np.save("Data/ZH_radar_dataset.npy", dataset)
 print("Saved dataset to Data/ZH_radar_dataset.npy")
+
+# Save the sorted filenames as a .json file
+with open("Data/ZH_radar_filenames.json", "w") as f:
+    json.dump(sorted(files), f)
+print("Saved filenames to Data/ZH_radar_filenames.json")
