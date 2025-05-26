@@ -1,0 +1,36 @@
+[31/45] train 0.0062 | val 0.0101
+[32/45] train 0.0062 | val 0.0101
+[33/45] train 0.0060 | val 0.0095
+New best saved
+[34/45] train 0.0060 | val 0.0103
+[35/45] train 0.0060 | val 0.0103
+[36/45] train 0.0062 | val 0.0099
+Traceback (most recent call last):
+  File "/home/ra65puy/Documents/Radar-Consulting/train_unet_3D_cnn.py", line 428, in <module>
+    train_radar_model(
+  File "/home/ra65puy/Documents/Radar-Consulting/train_unet_3D_cnn.py", line 280, in train_radar_model
+    tr = run_epoch(train_dl, True)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/Documents/Radar-Consulting/train_unet_3D_cnn.py", line 275, in run_epoch
+    optimizer.zero_grad(); loss.backward(); optimizer.step()
+                                            ^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 487, in wrapper
+    out = func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 91, in _use_grad
+    ret = func(self, *args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 223, in step
+    adam(
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 154, in maybe_fallback
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 784, in adam
+    func(
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 593, in _multi_tensor_adam
+    1 - beta1 ** _get_value(step) for step in device_state_steps
+                 ^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 106, in _get_value
+    return x.item() if isinstance(x, torch.Tensor) else x
+           ^^^^^^^^
+KeyboardInterrupt

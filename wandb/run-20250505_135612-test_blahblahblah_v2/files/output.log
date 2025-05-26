@@ -1,0 +1,5 @@
+[01/2] train 0.0218 | val 0.0214
+New best saved
+[02/2] train 0.0196 | val 0.0189
+New best saved
+Done. Checkpoints in /home/ra65puy/Documents/Radar-Consulting/runs/test_blahblahblah_v2

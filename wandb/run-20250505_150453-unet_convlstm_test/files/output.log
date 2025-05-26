@@ -1,0 +1,12 @@
+[41/60] train 0.0084 | val 0.0093
+[42/60] train 0.0081 | val 0.0101
+[43/60] train 0.0081 | val 0.0095
+[44/60] train 0.0081 | val 0.0091
+[45/60] train 0.0079 | val 0.0092
+[46/60] train 0.0080 | val 0.0095
+[47/60] train 0.0077 | val 0.0092
+[48/60] train 0.0076 | val 0.0093
+[49/60] train 0.0076 | val 0.0092
+[50/60] train 0.0078 | val 0.0099
+Early stopping: validation loss did not improve for 10 epochs.
+Done. Checkpoints in /home/ra65puy/Documents/Radar-Consulting/runs/unet_convlstm_test

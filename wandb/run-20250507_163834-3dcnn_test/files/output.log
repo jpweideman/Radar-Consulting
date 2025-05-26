@@ -1,0 +1,27 @@
+[01/15] train 0.1446 | val 0.2406
+New best saved
+[02/15] train 0.0496 | val 0.0615
+New best saved
+[03/15] train 0.0325 | val 0.0454
+New best saved
+[04/15] train 0.0269 | val 0.0318
+New best saved
+[05/15] train 0.0247 | val 0.0300
+New best saved
+[06/15] train 0.0226 | val 0.0288
+New best saved
+[07/15] train 0.0224 | val 0.0250
+New best saved
+[08/15] train 0.0207 | val 0.0259
+[09/15] train 0.0195 | val 0.0228
+New best saved
+[10/15] train 0.0188 | val 0.0219
+New best saved
+[11/15] train 0.0186 | val 0.0218
+New best saved
+[12/15] train 0.0186 | val 0.0234
+[13/15] train 0.0176 | val 0.0209
+New best saved
+[14/15] train 0.0173 | val 0.0298
+[15/15] train 0.0167 | val 0.0222
+Done. Checkpoints in /home/ra65puy/Documents/Radar-Consulting/runs/3dcnn_test

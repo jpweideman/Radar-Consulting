@@ -1,0 +1,19 @@
+{"time":"2025-04-28T19:00:07.203199563+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250428_190006-(124,124)_7_v5/logs/debug-core.log"}
+{"time":"2025-04-28T19:00:07.595881235+02:00","level":"INFO","msg":"created new stream","id":"(124,124)_7_v5"}
+{"time":"2025-04-28T19:00:07.595925435+02:00","level":"INFO","msg":"stream: started","id":"(124,124)_7_v5"}
+{"time":"2025-04-28T19:00:07.595962905+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"(124,124)_7_v5"}
+{"time":"2025-04-28T19:00:07.595992105+02:00","level":"INFO","msg":"sender: started","stream_id":"(124,124)_7_v5"}
+{"time":"2025-04-28T19:00:07.596043535+02:00","level":"INFO","msg":"handler: started","stream_id":"(124,124)_7_v5"}
+{"time":"2025-04-28T19:00:08.006122323+02:00","level":"INFO","msg":"api: retrying HTTP error","status":409,"url":"https://api.wandb.ai/graphql","body":"{\"errors\":[{\"message\":\"run (124,124)_7_v5 was previously created and deleted; try a new run name\",\"path\":[\"upsertBucket\"]}],\"data\":{\"upsertBucket\":null}}"}
+{"time":"2025-04-28T19:00:10.565090312+02:00","level":"INFO","msg":"api: retrying HTTP error","status":409,"url":"https://api.wandb.ai/graphql","body":"{\"errors\":[{\"message\":\"run (124,124)_7_v5 was previously created and deleted; try a new run name\",\"path\":[\"upsertBucket\"]}],\"data\":{\"upsertBucket\":null}}"}
+{"time":"2025-04-28T19:00:15.504487706+02:00","level":"INFO","msg":"api: retrying HTTP error","status":409,"url":"https://api.wandb.ai/graphql","body":"{\"errors\":[{\"message\":\"run (124,124)_7_v5 was previously created and deleted; try a new run name\",\"path\":[\"upsertBucket\"]}],\"data\":{\"upsertBucket\":null}}"}
+{"time":"2025-04-28T19:00:24.269127543+02:00","level":"INFO","msg":"api: retrying HTTP error","status":409,"url":"https://api.wandb.ai/graphql","body":"{\"errors\":[{\"message\":\"run (124,124)_7_v5 was previously created and deleted; try a new run name\",\"path\":[\"upsertBucket\"]}],\"data\":{\"upsertBucket\":null}}"}
+{"time":"2025-04-28T19:00:43.863939927+02:00","level":"INFO","msg":"api: retrying HTTP error","status":409,"url":"https://api.wandb.ai/graphql","body":"{\"errors\":[{\"message\":\"run (124,124)_7_v5 was previously created and deleted; try a new run name\",\"path\":[\"upsertBucket\"]}],\"data\":{\"upsertBucket\":null}}"}
+{"time":"2025-04-28T19:01:17.242094874+02:00","level":"INFO","msg":"api: retrying HTTP error","status":409,"url":"https://api.wandb.ai/graphql","body":"{\"errors\":[{\"message\":\"run (124,124)_7_v5 was previously created and deleted; try a new run name\",\"path\":[\"upsertBucket\"]}],\"data\":{\"upsertBucket\":null}}"}
+{"time":"2025-04-28T19:01:38.046619347+02:00","level":"INFO","msg":"stream: closing","id":"(124,124)_7_v5"}
+{"time":"2025-04-28T19:01:38.046657187+02:00","level":"ERROR","msg":"sender: upsertRun:","error":"failed to upsert bucket: api: failed sending: context canceled"}
+{"time":"2025-04-28T19:01:38.046718347+02:00","level":"INFO","msg":"handler: closed","stream_id":"(124,124)_7_v5"}
+{"time":"2025-04-28T19:01:38.046739307+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"(124,124)_7_v5"}
+{"time":"2025-04-28T19:01:38.046770877+02:00","level":"INFO","msg":"sender: closed","stream_id":"(124,124)_7_v5"}
+{"time":"2025-04-28T19:01:38.046823417+02:00","level":"WARN","msg":"runwork: ignoring record after close","work":{}}
+{"time":"2025-04-28T19:01:38.089857892+02:00","level":"INFO","msg":"stream: closed","id":"(124,124)_7_v5"}

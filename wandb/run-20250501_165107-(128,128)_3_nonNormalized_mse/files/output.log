@@ -1,0 +1,14 @@
+[01/10] train 5.0893 | val 6.8953
+New best saved
+[02/10] train 4.4032 | val 5.9598
+New best saved
+Traceback (most recent call last):
+  File "/home/ra65puy/Documents/Radar-Consulting/train_conv_lstm_nonnormalized.py", line 362, in <module>
+    np.savez(run_dir/"mse_by_range.npz", **mse_by_range)
+  File "/home/ra65puy/Documents/Radar-Consulting/train_conv_lstm_nonnormalized.py", line 257, in train_radar_model
+    tr = run_epoch(train_dl, True)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/Documents/Radar-Consulting/train_conv_lstm_nonnormalized.py", line 253, in run_epoch
+    tot += loss.item()*xb.size(0)
+           ^^^^^^^^^^^
+KeyboardInterrupt

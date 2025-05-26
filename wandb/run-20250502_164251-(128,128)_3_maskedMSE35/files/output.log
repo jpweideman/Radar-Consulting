@@ -1,0 +1,21 @@
+[01/10] train 0.0256 | val 0.0086
+New best saved
+Traceback (most recent call last):
+  File "/home/ra65puy/Documents/Radar-Consulting/train_conv_lstm_copy.py", line 456, in <module>
+    train_radar_model(
+  File "/home/ra65puy/Documents/Radar-Consulting/train_conv_lstm_copy.py", line 275, in train_radar_model
+    vl = run_epoch(val_dl,   False)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/Documents/Radar-Consulting/train_conv_lstm_copy.py", line 267, in run_epoch
+    loss  = criterion(pred, yb)
+            ^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/Documents/Radar-Consulting/train_conv_lstm_copy.py", line 214, in <lambda>
+    criterion = lambda pred, tgt: masked_mse_loss(
+                                  ^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/Documents/Radar-Consulting/train_conv_lstm_copy.py", line 114, in masked_mse_loss
+    return ((pred[mask] - target[mask]) ** 2).mean()
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/_tensor.py", line 33, in wrapped
+    @functools.wraps(f, assigned=assigned)
+
+KeyboardInterrupt

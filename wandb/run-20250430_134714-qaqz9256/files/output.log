@@ -1,0 +1,9 @@
+[01/4] train=0.0068 val=0.0058
+  ↳ new best saved
+[02/4] train=0.0036 val=0.0043
+  ↳ new best saved
+[03/4] train=0.0030 val=0.0037
+  ↳ new best saved
+[04/4] train=0.0028 val=0.0036
+  ↳ new best saved
+Training complete. Best val loss: 0.0035917697493898703

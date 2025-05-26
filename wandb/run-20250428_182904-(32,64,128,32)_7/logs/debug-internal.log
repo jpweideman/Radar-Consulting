@@ -1,0 +1,15 @@
+{"time":"2025-04-28T18:29:04.799682271+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250428_182904-(32,64,128,32)_7/logs/debug-core.log"}
+{"time":"2025-04-28T18:29:05.206272134+02:00","level":"INFO","msg":"created new stream","id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:29:05.206345461+02:00","level":"INFO","msg":"stream: started","id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:29:05.206455968+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:29:05.206538131+02:00","level":"INFO","msg":"handler: started","stream_id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:29:05.206633509+02:00","level":"INFO","msg":"sender: started","stream_id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:29:05.694971901+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-04-28T18:29:08.120544795+02:00","level":"INFO","msg":"stream: closing","id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:29:08.120665969+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-04-28T18:29:08.120755401+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-04-28T18:29:08.759884384+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-04-28T18:29:08.983154977+02:00","level":"INFO","msg":"handler: closed","stream_id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:29:08.983236149+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:29:08.983262633+02:00","level":"INFO","msg":"sender: closed","stream_id":"(32,64,128,32)_7"}
+{"time":"2025-04-28T18:29:08.98571275+02:00","level":"INFO","msg":"stream: closed","id":"(32,64,128,32)_7"}

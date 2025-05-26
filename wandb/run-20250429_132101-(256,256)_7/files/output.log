@@ -1,0 +1,40 @@
+Traceback (most recent call last):
+  File "/home/ra65puy/Documents/Radar-Consulting/train_conv_lstm.py", line 353, in <module>
+    train_radar_model(
+  File "/home/ra65puy/Documents/Radar-Consulting/train_conv_lstm.py", line 214, in train_radar_model
+    tr = run_epoch(train_dl, True)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/Documents/Radar-Consulting/train_conv_lstm.py", line 206, in run_epoch
+    pred  = model(xb)
+            ^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/Documents/Radar-Consulting/train_conv_lstm.py", line 78, in forward
+    h_list[i], c_list[i] = cell(xt, h_list[i], c_list[i])
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/Documents/Radar-Consulting/train_conv_lstm.py", line 40, in forward
+    gates = self.conv(torch.cat([x, h], dim=1))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/nn/modules/conv.py", line 554, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/miniconda3/lib/python3.12/site-packages/torch/nn/modules/conv.py", line 549, in _conv_forward
+    return F.conv2d(
+           ^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 338.00 MiB. GPU 0 has a total capacity of 11.66 GiB of which 135.44 MiB is free. Including non-PyTorch memory, this process has 11.46 GiB memory in use. Of the allocated memory 10.04 GiB is allocated by PyTorch, and 1.30 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

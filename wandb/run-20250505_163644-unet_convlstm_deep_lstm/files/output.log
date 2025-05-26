@@ -1,0 +1,37 @@
+[01/20] train 0.1438 | val 0.0771
+New best saved
+[02/20] train 0.0570 | val 0.0394
+New best saved
+[03/20] train 0.0398 | val 0.0357
+New best saved
+[04/20] train 0.0328 | val 0.0320
+New best saved
+[05/20] train 0.0292 | val 0.0275
+New best saved
+[06/20] train 0.0253 | val 0.0225
+New best saved
+[07/20] train 0.0220 | val 0.0191
+New best saved
+[08/20] train 0.0197 | val 0.0153
+New best saved
+[09/20] train 0.0179 | val 0.0143
+New best saved
+[10/20] train 0.0166 | val 0.0145
+[11/20] train 0.0161 | val 0.0128
+New best saved
+[12/20] train 0.0151 | val 0.0132
+[13/20] train 0.0150 | val 0.0123
+New best saved
+[14/20] train 0.0145 | val 0.0116
+New best saved
+[15/20] train 0.0141 | val 0.0125
+[16/20] train 0.0136 | val 0.0114
+New best saved
+[17/20] train 0.0133 | val 0.0112
+New best saved
+[18/20] train 0.0127 | val 0.0114
+[19/20] train 0.0124 | val 0.0107
+New best saved
+[20/20] train 0.0122 | val 0.0105
+New best saved
+Done. Checkpoints in /home/ra65puy/Documents/Radar-Consulting/runs/unet_convlstm_deep_lstm
