@@ -125,6 +125,7 @@ def train_radar_model(
     loss_name: str = "mse",
     loss_weight_thresh: float = 40.0,
     loss_weight_high: float = 10.0,
+    wandb_project: str = "radar-forecasting",
 ):
     """
     Train a ConvLSTM radar forecasting model without normalization.
@@ -159,6 +160,8 @@ def train_radar_model(
         Reflectivity threshold in dBZ (e.g., 40.0).
     loss_weight_high : float, optional (used for weighted_mse)
         Weight multiplier for pixels where true > threshold.
+    wandb_project : str, optional
+        Weights & Biases project name for experiment tracking.
 
     Returns
     -------
@@ -219,7 +222,7 @@ def train_radar_model(
     # wandb
     run_id = save_dir.name
     wandb.init(
-        project="radar-forecasting",
+        project=wandb_project,
         name=run_id,
         id=run_id,
         resume="allow",
@@ -422,6 +425,7 @@ if __name__ == "__main__":
                     help="Threshold in dBZ to apply higher loss weighting (default: 40.0)")
     parser.add_argument("--loss_weight_high", type=float, default=10.0,
                         help="Weight multiplier for pixels above threshold (default: 10.0)")
+    parser.add_argument("--wandb_project", type=str, default="radar-forecasting", help="wandb project name")
 
     args = parser.parse_args()
 
@@ -451,4 +455,5 @@ if __name__ == "__main__":
         loss_name=args.loss_name,
         loss_weight_thresh=args.loss_weight_thresh,
         loss_weight_high=args.loss_weight_high,
+        wandb_project=args.wandb_project,
     )

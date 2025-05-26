@@ -102,6 +102,7 @@ def train_radar_model(
     patch_thresh: float = 0.4,
     patch_frac: float = 0.15,
     use_patches: bool = False,
+    wandb_project: str = "radar-forecasting",
 ):
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     save_dir = Path(save_dir)
@@ -180,7 +181,7 @@ def train_radar_model(
     # wandb
     run_id = save_dir.name
     wandb.init(
-        project="radar-forecasting",
+        project=wandb_project,
         name=run_id,
         id=run_id,
         resume="allow",
@@ -352,6 +353,7 @@ if __name__ == "__main__":
     parser.add_argument("--patch_thresh", type=float, default=0.35, help="Threshold for extracting patches (default: 0.35)")
     parser.add_argument("--patch_frac", type=float, default=0.05, help="Minimum fraction of pixels in patch above threshold (default: 0.05)")
     parser.add_argument("--use_patches", type=bool, default=True, help="Whether to use patch-based training (default: True)")
+    parser.add_argument("--wandb_project", type=str, default="radar-forecasting", help="wandb project name")
 
     args = parser.parse_args()
 
@@ -386,5 +388,6 @@ if __name__ == "__main__":
         patch_thresh=args.patch_thresh,
         patch_frac=args.patch_frac,
         use_patches=args.use_patches,
+        wandb_project=args.wandb_project,
     )
 

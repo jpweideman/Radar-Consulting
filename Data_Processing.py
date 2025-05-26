@@ -74,4 +74,4 @@ print("Saved dataset to Data/ZH_radar_dataset.npy")
 # Save the sorted filenames as a .json file
 with open("Data/ZH_radar_filenames.json", "w") as f:
     json.dump(sorted(files), f)
-print("Saved filenames to Data/ZH_radar_filenames.json")
+print("Saved filenames to Data/ZH_radar_filenames.json") 

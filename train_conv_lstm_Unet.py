@@ -205,6 +205,7 @@ def train_radar_model(
     use_patches: bool = False,
     base_ch: int = 32,
     lstm_hid: int = 64,
+    wandb_project: str = "radar-forecasting",
 ):
     """
     Train a ConvLSTM radar forecasting model.
@@ -253,6 +254,8 @@ def train_radar_model(
         Base number of channels for U-Net (default: 32).
     lstm_hid : int, optional
         Number of hidden channels in the ConvLSTM bottleneck (default: 64).
+    wandb_project : str, optional
+        wandb project name (default: "radar-forecasting").
 
     Returns
     -------
@@ -343,7 +346,7 @@ def train_radar_model(
     # wandb
     run_id = save_dir.name
     wandb.init(
-        project="radar-forecasting",
+        project=wandb_project,
         name=run_id,
         id=run_id,
         resume="allow",
@@ -582,6 +585,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_patches", type=bool, default=True, help="Whether to use patch-based training (default: True)")
     parser.add_argument("--base_ch", type=int, default=32, help="Base number of channels for U-Net (default: 32)")
     parser.add_argument("--lstm_hid", type=int, default=64, help="Number of hidden channels in the ConvLSTM bottleneck (default: 64)")
+    parser.add_argument("--wandb_project", type=str, default="radar-forecasting", help="wandb project name")
 
     args = parser.parse_args()
 
@@ -618,6 +622,7 @@ if __name__ == "__main__":
         use_patches=args.use_patches,
         base_ch=args.base_ch,
         lstm_hid=args.lstm_hid,
+        wandb_project=args.wandb_project,
     )
 
     pred, truth = predict_validation_set(

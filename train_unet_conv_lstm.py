@@ -250,6 +250,7 @@ def train_radar_model(
     use_patches: bool = False,
     base_ch: int = 32,
     lstm_hid: int = 64,
+    wandb_project: str = "radar-forecasting",
 ):
     """
     Train a ConvLSTM radar forecasting model.
@@ -298,6 +299,8 @@ def train_radar_model(
         Number of hidden channels in the ConvLSTM bottleneck (default: 64).
         If a tuple or list is provided, multiple ConvLSTM layers are stacked in the bottleneck,
         with each value specifying the hidden size of each layer.
+    wandb_project : str, optional
+        wandb project name (default: "radar-forecasting").
 
     Returns
     -------
@@ -389,7 +392,7 @@ def train_radar_model(
     # wandb
     run_id = save_dir.name
     wandb.init(
-        project="radar-forecasting",
+        project=wandb_project,
         name=run_id,
         id=run_id,
         resume="allow",
@@ -626,6 +629,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_patches", type=bool, default=True, help="Whether to use patch-based training (default: True)")
     parser.add_argument("--base_ch", type=int, default=32, help="Base number of channels for U-Net (default: 32)")
     parser.add_argument("--lstm_hid", type=str, default="64", help="Number of hidden channels in the ConvLSTM bottleneck (int or tuple/list, e.g., 64 or (64,128))")
+    parser.add_argument("--wandb_project", type=str, default="radar-forecasting", help="wandb project name")
 
     args = parser.parse_args()
 
@@ -662,4 +666,5 @@ if __name__ == "__main__":
         use_patches=args.use_patches,
         base_ch=args.base_ch,
         lstm_hid=lstm_hid,
+        wandb_project=args.wandb_project,
     )
