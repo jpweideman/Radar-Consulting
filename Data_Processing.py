@@ -17,11 +17,10 @@ TARGET_H, TARGET_W = 360, 240
 
 # Helper function to process one file
 def process_one_file(file_path):
-    f = wrl.util.get_wradlib_data_file(file_path)
-    data, _ = wrl.io.read_gamic_hdf5(f)
+    data, _ = wrl.io.read_gamic_hdf5(file_path)
 
     processed_scans = []
-    for i in range(14):
+    for i in tqdm(range(14), desc=f"Scans in {os.path.basename(file_path)}", leave=False):
         scan_key = f"SCAN{i}"
 
         if "ZH" not in data[scan_key]:
@@ -64,7 +63,7 @@ all_data = []
 # Sort files for reproducibility
 files = sorted(files)
 
-for fname in tqdm(files):
+for fname in tqdm(files, desc="Processing files"):
     try:
         tensor = process_one_file(fname)  # (14, 360, 240)
         all_data.append(tensor)
