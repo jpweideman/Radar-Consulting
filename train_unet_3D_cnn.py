@@ -295,12 +295,12 @@ def train_radar_model(
         vl = run_epoch(val_dl,   False)
         print(f"[{ep:02d}/{end_epoch}] train {tr:.4f} | val {vl:.4f}")
         wandb.log({'epoch':ep,'train_loss':tr,'val_loss':vl})
-        torch.save({'epoch':ep,'model':model.state_dict(),
+        atomic_save({'epoch':ep,'model':model.state_dict(),
                     'optim':optimizer.state_dict(),'best_val':best_val},
                    ckpt_latest)
         if vl < best_val:
             best_val = vl
-            torch.save(model.state_dict(), ckpt_best)
+            atomic_save(model.state_dict(), ckpt_best)
             print("New best saved")
             wandb.log({'best_val_loss':best_val})
             epochs_since_improvement = 0
@@ -399,6 +399,11 @@ def predict_validation_set(
         print("Saved val_preds_dBZ.npy + val_targets_dBZ.npy →", run_dir)
 
     return pred_all, tgt_all
+
+def atomic_save(obj, path):
+    tmp_path = str(path) + ".tmp"
+    torch.save(obj, tmp_path)
+    os.replace(tmp_path, path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train 3D CNN radar forecasting model")

@@ -242,6 +242,11 @@ def weighted_mse_loss(pred, target, threshold=0.40, weight_high=10.0):
 
 # Training function
 
+def atomic_save(obj, path):
+    tmp_path = str(path) + ".tmp"
+    torch.save(obj, tmp_path)
+    os.replace(tmp_path, path)
+
 def train_radar_model(
     npy_path: str,
     save_dir: str,
@@ -455,12 +460,12 @@ def train_radar_model(
         vl = run_epoch(val_dl,   False)
         print(f"[{ep:02d}/{end_epoch}] train {tr:.4f} | val {vl:.4f}")
         wandb.log({'epoch':ep,'train_loss':tr,'val_loss':vl})
-        torch.save({'epoch':ep,'model':model.state_dict(),
+        atomic_save({'epoch':ep,'model':model.state_dict(),
                     'optim':optimizer.state_dict(),'best_val':best_val},
                    ckpt_latest)
         if vl < best_val:
             best_val = vl
-            torch.save(model.state_dict(), ckpt_best)
+            atomic_save(model.state_dict(), ckpt_best)
             print("New best saved")
             wandb.log({'best_val_loss':best_val})
             epochs_since_improvement = 0
