@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/ra65puy/Documents/Radar-Consulting/train_3D_cnn.py", line 389, in <module>
+    train_radar_model(
+  File "/home/ra65puy/Documents/Radar-Consulting/train_3D_cnn.py", line 247, in train_radar_model
+    vl = run_epoch(val_dl,   False)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ra65puy/Documents/Radar-Consulting/train_3D_cnn.py", line 243, in run_epoch
+    return tot/len(dl.dataset)
+           ~~~^~~~~~~~~~~~~~~~
+ZeroDivisionError: float division by zero

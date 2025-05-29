@@ -1,0 +1,16 @@
+{"time":"2025-05-28T18:26:36.315469401+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250528_182636-3dcnn_new_test/logs/debug-core.log"}
+{"time":"2025-05-28T18:26:36.733210713+02:00","level":"INFO","msg":"created new stream","id":"3dcnn_new_test"}
+{"time":"2025-05-28T18:26:36.73327641+02:00","level":"INFO","msg":"stream: started","id":"3dcnn_new_test"}
+{"time":"2025-05-28T18:26:36.733371441+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"3dcnn_new_test"}
+{"time":"2025-05-28T18:26:36.733457354+02:00","level":"INFO","msg":"sender: started","stream_id":"3dcnn_new_test"}
+{"time":"2025-05-28T18:26:36.733555188+02:00","level":"INFO","msg":"handler: started","stream_id":"3dcnn_new_test"}
+{"time":"2025-05-28T18:26:37.192389713+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-05-28T18:26:54.783152062+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-05-28T18:26:54.783270522+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-05-28T18:26:55.450081394+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-05-28T18:26:55.656759034+02:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2025-05-28T18:26:55.664926617+02:00","level":"INFO","msg":"stream: closing","id":"3dcnn_new_test"}
+{"time":"2025-05-28T18:26:55.664959763+02:00","level":"INFO","msg":"handler: closed","stream_id":"3dcnn_new_test"}
+{"time":"2025-05-28T18:26:55.664976443+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"3dcnn_new_test"}
+{"time":"2025-05-28T18:26:55.665074017+02:00","level":"INFO","msg":"sender: closed","stream_id":"3dcnn_new_test"}
+{"time":"2025-05-28T18:26:55.670147481+02:00","level":"INFO","msg":"stream: closed","id":"3dcnn_new_test"}

@@ -1,0 +1,60 @@
+_wandb:
+    value:
+        cli_version: 0.19.10
+        m: []
+        python_version: 3.12.9
+        t:
+            "1":
+                - 1
+                - 55
+            "2":
+                - 1
+                - 55
+            "3":
+                - 1
+                - 2
+                - 13
+                - 14
+                - 16
+                - 23
+                - 55
+            "4": 3.12.9
+            "5": 0.19.10
+            "8":
+                - 5
+            "12": 0.19.10
+            "13": linux-x86_64
+batch_size:
+    value: 4
+device:
+    value: cuda
+epochs:
+    value: 5
+hidden_dims:
+    value:
+        - 32
+        - 32
+kernel_size:
+    value: 3
+loss_name:
+    value: weighted_mse
+loss_weight_high:
+    value: 20
+loss_weight_thresh:
+    value: 0.45
+lr:
+    value: 0.0002
+patch_frac:
+    value: 0.05
+patch_size:
+    value: 64
+patch_stride:
+    value: 32
+patch_thresh:
+    value: 0.35
+seq_len_in:
+    value: 10
+train_frac:
+    value: 0.2
+use_patches:
+    value: true
