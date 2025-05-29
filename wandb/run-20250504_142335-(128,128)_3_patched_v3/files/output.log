@@ -1,4 +1,0 @@
-[01/2] train 0.0483 | val 0.0305
-New best saved
-[02/2] train 0.0250 | val 0.0482
-Done. Checkpoints in /home/ra65puy/Documents/Radar-Consulting/runs/(128,128)_3_patched_v3

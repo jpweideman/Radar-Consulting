@@ -1,7 +1,0 @@
-{"time":"2025-04-28T19:03:47.503402739+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"/home/ra65puy/Documents/Radar-Consulting/wandb/run-20250428_190347-(124,124)_7_v4/logs/debug-core.log"}
-{"time":"2025-04-28T19:03:47.898743532+02:00","level":"INFO","msg":"created new stream","id":"(124,124)_7_v4"}
-{"time":"2025-04-28T19:03:47.898786082+02:00","level":"INFO","msg":"stream: started","id":"(124,124)_7_v4"}
-{"time":"2025-04-28T19:03:47.898837102+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"(124,124)_7_v4"}
-{"time":"2025-04-28T19:03:47.898860582+02:00","level":"INFO","msg":"sender: started","stream_id":"(124,124)_7_v4"}
-{"time":"2025-04-28T19:03:47.898898812+02:00","level":"INFO","msg":"handler: started","stream_id":"(124,124)_7_v4"}
-{"time":"2025-04-28T19:03:48.326152716+02:00","level":"INFO","msg":"Starting system monitor"}
