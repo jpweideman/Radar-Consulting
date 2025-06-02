@@ -7,33 +7,44 @@ data_arrays = []
 all_filenames = []
 
 # First, collect all relevant directories for progress bar
-join_targets = []
-for root, dirs, files in os.walk('Data'):
+join_targets = []   
+#for root, dirs, files in os.walk('Data'):           # for data in remote directory
+for root, dirs, files in os.walk('/tmp/Data'):      # for data in local directory
     dirs.sort(key=lambda x: int(x) if x.isdigit() else x)
     files.sort()
     if 'data.npy' in files and 'filenames.json' in files:
         join_targets.append(root)
 
-# Now, process with a progress bar
+# Determine total number of samples and sample shape
+total_samples = 0
+sample_shape = None
+for root in join_targets:
+    arr = np.load(os.path.join(root, 'data.npy'), mmap_mode='r')
+    if sample_shape is None:
+        sample_shape = arr.shape[1:]  # (14, 360, 240)
+    total_samples += arr.shape[0]
+
+# Ensure output directory exists
+os.makedirs('Data', exist_ok=True)
+
+# Pre-allocate memmap array for output
+out_path = 'Data/ZH_radar_dataset.npy'
+final_data = np.lib.format.open_memmap(out_path, mode='w+', dtype='float32', shape=(total_samples, *sample_shape))
+
+# Fill the memmap array and join filenames
+idx = 0
+all_filenames = []
 for root in tqdm(join_targets, desc="Joining processed data"):
     arr = np.load(os.path.join(root, 'data.npy'))
-    data_arrays.append(arr)
+    n = arr.shape[0]
+    final_data[idx:idx+n] = arr
+    idx += n
     with open(os.path.join(root, 'filenames.json')) as f:
         names = json.load(f)
         all_filenames.extend(names)
 
-# Concatenate all data arrays
-if data_arrays:
-    final_data = np.concatenate(data_arrays, axis=0)
-    np.save('Data/ZH_radar_dataset.npy', final_data)
-    print(f"Saved concatenated data to Data/ZH_radar_dataset.npy, shape: {final_data.shape}")
-else:
-    print("No data.npy files found in Data directory.")
-
-# Save all filenames
-if all_filenames:
-    with open('Data/ZH_radar_filenames.json', 'w') as f:
-        json.dump(all_filenames, f)
-    print(f"Saved concatenated filenames to Data/ZH_radar_filenames.json, count: {len(all_filenames)}")
-else:
-    print("No filenames.json files found in Data directory.") 
+# Save filenames
+with open('Data/ZH_radar_filenames.json', 'w') as f:
+    json.dump(all_filenames, f)
+print(f"Saved concatenated data to {out_path}, shape: {final_data.shape}")
+print(f"Saved concatenated filenames to Data/ZH_radar_filenames.json, count: {len(all_filenames)}") 

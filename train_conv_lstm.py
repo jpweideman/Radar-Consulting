@@ -508,7 +508,7 @@ if __name__ == "__main__":
     parser.add_argument("--seq_len_in", type=int, default=10, help="Input sequence length (default: 10)")
     parser.add_argument("--seq_len_out", type=int, default=1, help="Output sequence length (default: 1)")
     parser.add_argument("--train_frac", type=float, default=0.6, help="Training fraction (default: 0.8)")
-    parser.add_argument("--batch_size", type=int, default=1, help="Batch size (default: 4)")
+    parser.add_argument("--batch_size", type=int, default=4, help="Batch size (default: 4)")
     parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate (default: 2e-4)")
     parser.add_argument("--epochs", type=int, default=15, help="Number of epochs (default: 15)")
     parser.add_argument("--device", type=str, default='cuda', help="Device to train on ('cuda' or 'cpu')")

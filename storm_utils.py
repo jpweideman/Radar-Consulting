@@ -5,6 +5,10 @@ from IPython.display import display, HTML
 from scipy.ndimage import binary_dilation
 from skimage.measure import find_contours
 from matplotlib.path import Path
+import argparse
+import json
+from tqdm import tqdm
+import os
 
 
 def animate_storms(data, reflectivity_threshold=45, area_threshold=15, dilation_iterations=5, interval=100):
@@ -315,7 +319,7 @@ def evaluate_new_storm_predictions(new_storms_pred, new_storms_true, overlap_thr
     matched_true = set()  # (t, idx)
 
     # For each true storm, look for matching pred storm in t-1, t, t+1
-    for t, true_storms in true_lookup.items():
+    for t, true_storms in tqdm(true_lookup.items(), desc='Evaluating (true storms)', total=len(true_lookup)):
         for i, true_storm in enumerate(true_storms):
             found = False
             for dt, label in zip([0, -1, 1], ["correct", "early", "late"]):
@@ -346,7 +350,7 @@ def evaluate_new_storm_predictions(new_storms_pred, new_storms_true, overlap_thr
 
     # False positives: predicted storms not matched to any true storm in ±1 time step
     false_positives = 0
-    for t, pred_storms in pred_lookup.items():
+    for t, pred_storms in tqdm(pred_lookup.items(), desc='Evaluating (false positives)', total=len(pred_lookup)):
         for j, pred_storm in enumerate(pred_storms):
             if (t, j) in matched_pred:
                 continue
@@ -392,4 +396,85 @@ def evaluate_new_storm_predictions(new_storms_pred, new_storms_true, overlap_thr
         "anytime_ratio": anytime_ratio,
         "false_positive_ratio": false_positive_ratio,
     }
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="""
+        Evaluate new storm predictions from .npy files and save results.
+        This script loads prediction and target arrays (N, C, H, W),
+        reduces them to (T, H, W) by taking the max over the channel dimension (axis=1, max CAPPI),
+        then runs detect_new_storm_formations and evaluate_new_storm_predictions.
+        Results are printed and saved as JSON.
+        """
+    )
+    parser.add_argument('--preds', type=str, required=True, help='Path to predicted storms .npy file (shape: N, C, H, W or N, H, W)')
+    parser.add_argument('--targets', type=str, required=True, help='Path to true storms .npy file (shape: N, C, H, W or N, H, W)')
+    parser.add_argument('--out', type=str, required=True, help='Output JSON file for evaluation results')
+    parser.add_argument('--overlap_threshold', type=float, default=0.2, help='Overlap threshold for matching storms (default: 0.2)')
+    parser.add_argument('--reflectivity_threshold', type=float, default=45, help='Reflectivity threshold for storm detection (default: 45)')
+    parser.add_argument('--area_threshold', type=int, default=15, help='Area threshold for storm detection (default: 15)')
+    parser.add_argument('--dilation_iterations', type=int, default=5, help='Dilation iterations for storm detection (default: 5)')
+
+    args = parser.parse_args()
+
+    # Load shape and dtype from metadata files if they exist
+    def load_memmap_with_meta(array_path):
+        meta_path = array_path.replace('.npy', '_meta.npz')
+        if os.path.exists(meta_path):
+            meta = np.load(meta_path)
+            shape = tuple(meta['shape'])
+            dtype = str(meta['dtype'])
+            return np.memmap(array_path, dtype=dtype, mode='r', shape=shape)
+        else:
+            # Fallback: try np.load (for legacy files)
+            return np.load(array_path, mmap_mode='r')
+
+    pred = load_memmap_with_meta(args.preds)
+    tgt = load_memmap_with_meta(args.targets)
+
+    # Always reduce to (T, H, W) by taking max over channel dimension if present
+    # Documented: This is CAPPI (Constant Altitude Plan Position Indicator)
+    # If input is (N, C, H, W), take max over axis=1
+    # If input is already (N, H, W), do nothing
+    if pred.ndim == 4:
+        pred_cappi = np.max(pred, axis=1)
+        tgt_cappi = np.max(tgt, axis=1)
+    elif pred.ndim == 3:
+        pred_cappi = pred
+        tgt_cappi = tgt
+    else:
+        raise ValueError("Input arrays must be of shape (N, C, H, W) or (N, H, W)")
+
+    # Progress bar for storm detection
+    def detect_with_progress(data, **kwargs):
+        storms = []
+        for t in tqdm(range(data.shape[0]), desc=kwargs.get('desc', 'Detecting storms')):
+            storms.append(detect_storms(data[t:t+1], **{k: v for k, v in kwargs.items() if k != 'desc'})[0])
+        # Reformat to match detect_new_storm_formations output
+        # (detect_new_storm_formations returns a summary, not raw storms)
+        # So we call the original function after progress for correct output
+        return detect_new_storm_formations(data, **{k: v for k, v in kwargs.items() if k != 'desc'})
+
+    print('Detecting new storm formations in predictions...')
+    pred_storms = detect_with_progress(
+        pred_cappi,
+        reflectivity_threshold=args.reflectivity_threshold,
+        area_threshold=args.area_threshold,
+        dilation_iterations=args.dilation_iterations,
+        desc='Pred storms')
+    print('Detecting new storm formations in targets...')
+    tgt_storms = detect_with_progress(
+        tgt_cappi,
+        reflectivity_threshold=args.reflectivity_threshold,
+        area_threshold=args.area_threshold,
+        dilation_iterations=args.dilation_iterations,
+        desc='True storms')
+
+    # Evaluate
+    results = evaluate_new_storm_predictions(pred_storms, tgt_storms, overlap_threshold=args.overlap_threshold)
+    print(json.dumps(results, indent=2))
+
+    # Save to JSON
+    with open(args.out, 'w') as f:
+        json.dump(results, f, indent=2)
 

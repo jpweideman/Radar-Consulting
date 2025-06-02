@@ -1,16 +1,3 @@
-"""
-train_conv_lstm.py
-------------------
-Train a ConvLSTM on 4-D radar data with
- • z-score normalisation (stats taken ONLY from the training horizon)
- • chronological train/val split
- • weighted MSE that emphasises >30 dBZ echoes
- • automatic checkpoints (latest + best)
- • Weights & Biases integration for experiment tracking
-
-Author: you
-"""
-
 from pathlib import Path
 import numpy as np, torch, torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, Subset
@@ -34,10 +21,7 @@ def atomic_save(obj, path):
     tmp_path = str(path) + ".tmp"
     torch.save(obj, tmp_path)
     os.replace(tmp_path, path)
-
-# ------------------------------------------------------------------
-# 1)  Dataset – raw dBZ without normalization
-# ------------------------------------------------------------------
+# Dataset – raw dBZ without normalizatio
 class RadarWindowDataset(Dataset):
     def __init__(self, cube, seq_in, seq_out):
         # cube: np.ndarray shape (T,C,H,W) in original dBZ scale
@@ -54,10 +38,7 @@ class RadarWindowDataset(Dataset):
 
     def __getitem__(self, i):
         return torch.from_numpy(self.X[i]), torch.from_numpy(self.Y[i])
-
-# ------------------------------------------------------------------
-# 2)  ConvLSTM blocks
-# ------------------------------------------------------------------
+# ConvLSTM block
 class ConvLSTMCell(nn.Module):
     def __init__(self, in_ch, hid_ch, kernel=3):
         super().__init__()
@@ -107,10 +88,7 @@ class ConvLSTM(nn.Module):
                 h_list[i], c_list[i] = cell(xt, h_list[i], c_list[i])
                 xt = h_list[i]
         return self.to_out(xt)
-
-# ------------------------------------------------------------------
-# 3)  Training function
-# ------------------------------------------------------------------
+# Training function
 def weighted_mse_loss(pred, target, threshold=40.0, weight_high=10.0):
     """
     Weighted MSE that emphasizes high reflectivity areas (e.g., >40 dBZ).
@@ -291,9 +269,7 @@ def train_radar_model(
     print("Done. Checkpoints in", save_dir.resolve())
     wandb.finish()
 
-# ------------------------------------------------------------------
-# 3b) predict_validation_set  (simplified)
-# ------------------------------------------------------------------
+# predict_validation_set  
 def compute_mse_by_ranges(pred, target, ranges):
     """
     Compute MSE for different reflectivity ranges.
@@ -420,9 +396,9 @@ def predict_validation_set(
 
     return pred_all, tgt_all
 
-# # ------------------------------------------------------------------
-# # 4)  CLI helper  (optional)
-# # ------------------------------------------------------------------
+
+# CLI helper 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train ConvLSTM radar forecasting model without normalization")
     parser.add_argument("--save_dir", type=str, required=True, help="Directory to save model checkpoints and stats")
