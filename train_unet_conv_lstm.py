@@ -47,9 +47,8 @@ class RadarWindowDataset(Dataset):
 
 
 class PatchRadarWindowDataset(Dataset):
-    def __init__(self, cube, seq_in, seq_out, maxv, patch_size=64, patch_stride=64, patch_thresh=0.4, patch_frac=0.15):
+    def __init__(self, cube, seq_in, seq_out, maxv, patch_size=64, patch_stride=64, patch_thresh=0.4, patch_frac=0.15, patch_index_path=None):
         # cube: np.ndarray shape (T,C,H,W) in original scale, memory-mapped
-        self.patches = []  # List of (t, y, x)
         self.cube = cube
         self.seq_in = seq_in
         self.seq_out = seq_out
@@ -58,19 +57,27 @@ class PatchRadarWindowDataset(Dataset):
         self.patch_stride = patch_stride
         self.patch_thresh = patch_thresh
         self.patch_frac = patch_frac
+        self.patches = []  # List of (t, y, x)
         T, C, H, W = cube.shape
         last = T - seq_in - seq_out + 1
-        for t in tqdm(range(last), desc='Extracting patches'):
-            for y in range(0, H - patch_size + 1, patch_stride):
-                for x in range(0, W - patch_size + 1, patch_stride):
-                    # Only load the required patch for Y
-                    Y_patch = np.maximum(
-                        cube[t+seq_in:t+seq_in+seq_out, :, y:y+patch_size, x:x+patch_size], 0
-                    ) / (maxv + 1e-6)
-                    total_pix = Y_patch.size
-                    n_above = (Y_patch > patch_thresh).sum()
-                    if n_above / total_pix >= patch_frac:
-                        self.patches.append((t, y, x))
+        # Patch index caching
+        if patch_index_path is not None and os.path.exists(patch_index_path):
+            print(f"Loading patch indices from {patch_index_path}")
+            self.patches = np.load(patch_index_path, allow_pickle=True).tolist()
+        else:
+            for t in tqdm(range(last), desc='Extracting patches'):
+                for y in range(0, H - patch_size + 1, patch_stride):
+                    for x in range(0, W - patch_size + 1, patch_stride):
+                        Y_patch = np.maximum(
+                            cube[t+seq_in:t+seq_in+seq_out, :, y:y+patch_size, x:x+patch_size], 0
+                        ) / (maxv + 1e-6)
+                        total_pix = Y_patch.size
+                        n_above = (Y_patch > patch_thresh).sum()
+                        if n_above / total_pix >= patch_frac:
+                            self.patches.append((t, y, x))
+            if patch_index_path is not None:
+                np.save(patch_index_path, np.array(self.patches, dtype=object))
+                print(f"Saved patch indices to {patch_index_path}")
 
     def __len__(self):
         return len(self.patches)
@@ -371,7 +378,8 @@ def train_radar_model(
 
     # DataLoaders
     if use_patches:
-        full_ds  = PatchRadarWindowDataset(cube, seq_len_in, seq_len_out, maxv, patch_size, patch_stride, patch_thresh, patch_frac)
+        patch_index_path = str(save_dir / "patch_indices.npy")
+        full_ds  = PatchRadarWindowDataset(cube, seq_len_in, seq_len_out, maxv, patch_size, patch_stride, patch_thresh, patch_frac, patch_index_path=patch_index_path)
         # Split by time index (t) for train/val
         train_idx = []
         val_idx = []
