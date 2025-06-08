@@ -7,6 +7,7 @@ from torch.utils.data import Dataset, DataLoader, Subset
 import wandb
 import os
 import random
+from tqdm import tqdm
 
 def set_seed(seed=42):
     random.seed(seed)
@@ -35,21 +36,28 @@ class RadarWindowDataset(Dataset):
         return torch.from_numpy(self.X[i]), torch.from_numpy(self.Y[i])
 
 class PatchRadarWindowDataset(Dataset):
-    def __init__(self, cube_norm, seq_in, seq_out, patch_size=64, patch_stride=64, patch_thresh=0.4, patch_frac=0.15):
+    def __init__(self, cube_norm, seq_in, seq_out, patch_size=64, patch_stride=64, patch_thresh=0.4, patch_frac=0.15, patch_index_path=None):
         self.patches = []
         T, C, H, W = cube_norm.shape
         last = T - seq_in - seq_out + 1
-        for t in range(last):
-            X_seq = cube_norm[t:t+seq_in]
-            Y_seq = cube_norm[t+seq_in:t+seq_in+seq_out]
-            for y in range(0, H - patch_size + 1, patch_stride):
-                for x in range(0, W - patch_size + 1, patch_stride):
-                    X_patch = X_seq[:, :, y:y+patch_size, x:x+patch_size]
-                    Y_patch = Y_seq[:, :, y:y+patch_size, x:x+patch_size]
-                    total_pix = Y_patch.size
-                    n_above = (Y_patch > patch_thresh).sum()
-                    if n_above / total_pix >= patch_frac:
-                        self.patches.append((t, y, x, X_patch, Y_patch.squeeze(0)))
+        if patch_index_path is not None and os.path.exists(patch_index_path):
+            print(f"Loading patch indices from {patch_index_path}")
+            self.patches = np.load(patch_index_path, allow_pickle=True).tolist()
+        else:
+            for t in range(last):
+                X_seq = cube_norm[t:t+seq_in]
+                Y_seq = cube_norm[t+seq_in:t+seq_in+seq_out]
+                for y in range(0, H - patch_size + 1, patch_stride):
+                    for x in range(0, W - patch_size + 1, patch_stride):
+                        X_patch = X_seq[:, :, y:y+patch_size, x:x+patch_size]
+                        Y_patch = Y_seq[:, :, y:y+patch_size, x:x+patch_size]
+                        total_pix = Y_patch.size
+                        n_above = (Y_patch > patch_thresh).sum()
+                        if n_above / total_pix >= patch_frac:
+                            self.patches.append((t, y, x, X_patch, Y_patch.squeeze(0)))
+            if patch_index_path is not None:
+                np.save(patch_index_path, np.array(self.patches, dtype=object))
+                print(f"Saved patch indices to {patch_index_path}")
     def __len__(self):
         return len(self.patches)
     def __getitem__(self, i):
@@ -58,6 +66,27 @@ class PatchRadarWindowDataset(Dataset):
 
 # 3D CNN Model
 def conv3d_block(in_ch, out_ch, kernel_size=3, stride=1, padding=1):
+    """
+    Create a 3D convolutional block with BatchNorm and ReLU.
+
+    Parameters
+    ----------
+    in_ch : int
+        Input channels.
+    out_ch : int
+        Output channels.
+    kernel_size : int, optional
+        Kernel size (default: 3).
+    stride : int, optional
+        Stride (default: 1).
+    padding : int, optional
+        Padding (default: 1).
+
+    Returns
+    -------
+    nn.Sequential
+        3D convolutional block.
+    """
     return nn.Sequential(
         nn.Conv3d(in_ch, out_ch, kernel_size, stride, padding),
         nn.BatchNorm3d(out_ch),
@@ -65,6 +94,20 @@ def conv3d_block(in_ch, out_ch, kernel_size=3, stride=1, padding=1):
     )
 
 class Radar3DCNN(nn.Module):
+    """
+    Simple 3D CNN for spatiotemporal radar forecasting.
+
+    Parameters
+    ----------
+    in_ch : int
+        Number of input channels.
+    hidden_dims : tuple
+        Hidden channels for each layer.
+    kernel : int, optional
+        Kernel size (default: 3).
+    seq_len_in : int, optional
+        Input sequence length (default: 10).
+    """
     def __init__(self, in_ch, hidden_dims=(64, 64), kernel=3, seq_len_in=10):
         super().__init__()
         layers = []
@@ -89,11 +132,36 @@ class Radar3DCNN(nn.Module):
 
 # Weighted MSE loss (copied)
 def weighted_mse_loss(pred, target, threshold=0.40, weight_high=10.0):
+    """
+    Weighted MSE loss emphasizing high-reflectivity areas.
+
+    Parameters
+    ----------
+    pred : torch.Tensor
+        Predicted values (normalized).
+    target : torch.Tensor
+        Ground truth (normalized).
+    threshold : float, optional
+        Threshold for high-reflectivity (default: 0.40).
+    weight_high : float, optional
+        Weight for high-reflectivity pixels (default: 10.0).
+
+    Returns
+    -------
+    torch.Tensor
+        Scalar loss.
+    """
     weight = torch.ones_like(target)
     weight[target > threshold] = weight_high
     return ((pred - target) ** 2 * weight).mean()
 
 def atomic_save(obj, path):
+    """
+    Atomically save a PyTorch object to disk to avoid partial writes.
+    Args:
+        obj: object to save
+        path: str or Path, destination path
+    """
     tmp_path = str(path) + ".tmp"
     torch.save(obj, tmp_path)
     os.replace(tmp_path, path)
@@ -122,28 +190,78 @@ def train_radar_model(
     use_patches: bool = False,
     wandb_project: str = "radar-forecasting",
 ):
+    """
+    Train a 3D CNN radar forecasting model.
+
+    Parameters
+    ----------
+    npy_path : str
+        Path to the input NumPy file containing radar reflectivity data with shape (T, C, H, W).
+    save_dir : str
+        Directory to save model checkpoints and statistics.
+    seq_len_in : int, optional
+        Number of input time steps (default: 10).
+    seq_len_out : int, optional
+        Number of output time steps to predict (default: 1).
+    train_frac : float, optional
+        Fraction of the data to use for training; the remainder is used for validation (default: 0.8).
+    batch_size : int, optional
+        Batch size for training (default: 4).
+    lr : float, optional
+        Learning rate for the optimizer (default: 2e-4).
+    hidden_dims : tuple, optional
+        Hidden channels for each layer (default: (64, 64)).
+    kernel_size : int, optional
+        Convolution kernel size (default: 3).
+    epochs : int, optional
+        Number of training epochs (default: 15).
+    device : str, optional
+        Device to run training on ('cuda' or 'cpu'); defaults to 'cuda' if available.
+    loss_name : str, optional
+        Loss function to use; either 'mse', 'weighted_mse'.
+    loss_weight_thresh : float, optional
+        Threshold for weighted MSE (default: 0.40).
+    loss_weight_high : float, optional
+        Weight for high-reflectivity pixels (default: 10.0).
+    patch_size : int, optional
+        Size of spatial patches to extract (default: 64).
+    patch_stride : int, optional
+        Stride for patch extraction (default: 64).
+    patch_thresh : float, optional
+        Threshold for extracting patches (default: 0.4).
+    patch_frac : float, optional
+        Minimum fraction of pixels in patch above threshold (default: 0.15).
+    use_patches : bool, optional
+        Whether to use patch-based training (default: False).
+    wandb_project : str, optional
+        wandb project name (default: "radar-forecasting").
+
+    Returns
+    -------
+    None
+    """
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     save_dir = Path(save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
 
-    # load & sanitize
-    cube = np.load(npy_path)
-    cube[cube < 0] = 0
+    # load & sanitize (memory-mapped)
+    cube = np.load(npy_path, mmap_mode='r')
     T,C,H,W = cube.shape
     print(f"Loaded {npy_path} → {cube.shape}")
 
     # chronological split & min-max
     n_total = T - seq_len_in - seq_len_out + 1
     n_train = int(n_total * train_frac)
-    ref = cube[:n_train+seq_len_in]
-    maxv = float(ref.max())
+    n_train_plus = n_train + seq_len_in
+    maxv = 85.0
+    print(f"Normalization maxv (fixed): {maxv}")
     np.savez(save_dir/"minmax_stats.npz", maxv=maxv)
     eps = 1e-6
-    cube_n = cube.astype(np.float32) / (maxv + eps)
 
     # DataLoaders
     if use_patches:
-        full_ds  = PatchRadarWindowDataset(cube_n, seq_len_in, seq_len_out, patch_size, patch_stride, patch_thresh, patch_frac)
+        patch_index_path = str(save_dir / "patch_indices.npy")
+        full_ds  = PatchRadarWindowDataset(cube, seq_len_in, seq_len_out, patch_size, patch_stride, patch_thresh, patch_frac, patch_index_path=patch_index_path)
         train_idx = []
         val_idx = []
         n_total = T - seq_len_in - seq_len_out + 1
@@ -156,14 +274,14 @@ def train_radar_model(
         train_ds = Subset(full_ds, train_idx)
         val_ds   = Subset(full_ds, val_idx)
         train_dl = DataLoader(train_ds, batch_size, shuffle=True)
-        val_dl   = DataLoader(val_ds,   batch_size, shuffle=False)
+        val_dl   = DataLoader(val_ds, batch_size, shuffle=False)
         print(f"Patch-based: train={len(train_ds)}  val={len(val_ds)}")
     else:
-        full_ds  = RadarWindowDataset(cube_n, seq_len_in, seq_len_out)
+        full_ds  = RadarWindowDataset(cube, seq_len_in, seq_len_out)
         train_ds = Subset(full_ds, list(range(0, n_train)))
         val_ds   = Subset(full_ds, list(range(n_train, n_total)))
         train_dl = DataLoader(train_ds, batch_size, shuffle=False)
-        val_dl   = DataLoader(val_ds,   batch_size, shuffle=False)
+        val_dl   = DataLoader(val_ds, batch_size, shuffle=False)
         print(f"Samples  train={len(train_ds)}  val={len(val_ds)}")
 
     # model, optimizer, loss
@@ -266,6 +384,23 @@ def train_radar_model(
     wandb.finish()
 
 def compute_mse_by_ranges(pred, target, ranges):
+    """
+    Compute MSE for different reflectivity ranges.
+
+    Parameters
+    ----------
+    pred : np.ndarray
+        Predicted values.
+    target : np.ndarray
+        Ground truth values.
+    ranges : list of tuple
+        List of (min, max) ranges to compute MSE for.
+
+    Returns
+    -------
+    dict
+        Dictionary with MSE values for each range.
+    """
     mse_by_range = {}
     for r_min, r_max in ranges:
         mask = (target >= r_min) & (target < r_max)
@@ -292,58 +427,127 @@ def predict_validation_set(
     save_arrays: bool = True,
 ):
     """
-    Run inference on the validation set using a Radar3DCNN model from train_radar_model.
+    Run inference on the validation set using a 3D CNN model from train_radar_model.
+
+    Parameters
+    ----------
+    npy_path : str
+        Path to the input NumPy file containing radar reflectivity data with shape (T, C, H, W).
+    run_dir : str
+        Directory containing model checkpoints and statistics from training.
+    seq_len_in : int, optional
+        Number of input radar frames to use for prediction (default: 10).
+    seq_len_out : int, optional
+        Number of future radar frames to predict (default: 1).
+    train_frac : float, optional
+        Fraction of data used for training split, used to identify validation set (default: 0.8).
+    batch_size : int, optional
+        Batch size for inference (default: 4).
+    hidden_dims : tuple, optional
+        Hidden channels for each layer (default: (64, 64)).
+    kernel_size : int, optional
+        Convolution kernel size (default: 3).
+    which : str, optional
+        Which checkpoint to load - 'best' for best validation checkpoint or 'latest' (default: 'best').
+    device : str, optional
+        Device to run inference on (default: 'cpu').
+    save_arrays : bool, optional
+        Whether to save predictions and targets as memory-mapped .npy files in run_dir (default: True).
+        Files will be named 'val_preds_dBZ.npy' and 'val_targets_dBZ.npy'.
+
+    Returns
+    -------
+    None
+        The function saves predictions and targets to disk if save_arrays=True, and prints MSE metrics
+        for different reflectivity ranges (0-20, 20-35, 35-45, 45-100 dBZ).
     """
+    import numpy as np
+    from tqdm import tqdm
+
     device = device or "cpu"
     run_dir = Path(run_dir)
     ckpt    = run_dir / ("best_val.pt" if which=="best" else "latest.pt")
     stats   = np.load(run_dir/"minmax_stats.npz")
     maxv    = float(stats['maxv']); eps=1e-6
 
-    cube = np.load(npy_path); cube[cube<0]=0
-    norm = cube.astype(np.float32)/(maxv+eps)
-
-    T       = cube.shape[0]
+    # Use memory-mapped loading for large datasets
+    cube = np.load(npy_path, mmap_mode='r')
+    T, C, H, W = cube.shape
     n_tot   = T - seq_len_in - seq_len_out + 1
     n_train = int(n_tot * train_frac)
-    ds      = RadarWindowDataset(norm, seq_len_in, seq_len_out)
+    ds      = RadarWindowDataset(cube, seq_len_in, seq_len_out)
     val_ds  = Subset(ds, list(range(n_train, n_tot)))
     dl      = DataLoader(val_ds, batch_size, shuffle=False)
 
-    model = Radar3DCNN(in_ch=cube.shape[1], hidden_dims=hidden_dims, kernel=kernel_size, seq_len_in=seq_len_in)
+    model = Radar3DCNN(in_ch=C, hidden_dims=hidden_dims, kernel=kernel_size, seq_len_in=seq_len_in)
     st = torch.load(ckpt, map_location=device)
     if isinstance(st, dict) and 'model' in st:
         st=st['model']
     model.load_state_dict(st)
     model.to(device).eval()
 
-    preds, gts = [], []
-    with torch.no_grad():
-        for xb,yb in dl:
-            xb = xb.to(device)
-            out_n = model(xb).cpu().numpy()
-            preds.append(out_n*(maxv+eps))
-            gts.append(yb.numpy()*(maxv+eps))
+    N = len(val_ds)
+    if save_arrays:
+        preds_memmap = np.memmap(run_dir/"val_preds_dBZ.npy", dtype='float32', mode='w+', shape=(N, C, H, W))
+        gts_memmap   = np.memmap(run_dir/"val_targets_dBZ.npy", dtype='float32', mode='w+', shape=(N, C, H, W))
+    else:
+        preds_memmap = None
+        gts_memmap = None
 
-    pred_all = np.concatenate(preds,axis=0)
-    tgt_all  = np.concatenate(gts,axis=0)
-    
-    # Compute MSE for different reflectivity ranges
+    # For MSE by range, accumulate sum of squared errors and counts for each range
     ranges = [(0, 20), (20, 35), (35, 45), (45, 100)]
-    mse_by_range = compute_mse_by_ranges(pred_all, tgt_all, ranges)
-    
+    mse_sums = {f"mse_{r_min}_{r_max}": 0.0 for r_min, r_max in ranges}
+    mse_counts = {f"mse_{r_min}_{r_max}": 0 for r_min, r_max in ranges}
+
+    idx = 0
+    with torch.no_grad():
+        for xb, yb in tqdm(dl, desc='Validating', total=len(dl)):
+            xb = xb.to(device)
+            out_n = model(xb).cpu().numpy()  # (B, C, H, W)
+            yb_np = yb.numpy()  # (B, C, H, W)
+            out_n_dBZ = out_n * (maxv+eps)
+            yb_dBZ = yb_np * (maxv+eps)
+            batch_size = out_n.shape[0]
+            if save_arrays:
+                preds_memmap[idx:idx+batch_size] = out_n_dBZ
+                gts_memmap[idx:idx+batch_size] = yb_dBZ
+            # Compute MSE by range for this batch
+            for r_min, r_max in ranges:
+                mask = (yb_dBZ >= r_min) & (yb_dBZ < r_max)
+                n_pix = np.sum(mask)
+                if n_pix > 0:
+                    mse = np.sum((out_n_dBZ[mask] - yb_dBZ[mask]) ** 2)
+                    mse_sums[f"mse_{r_min}_{r_max}"] += mse
+                    mse_counts[f"mse_{r_min}_{r_max}"] += n_pix
+            idx += batch_size
+
+    if save_arrays:
+        preds_memmap.flush()
+        gts_memmap.flush()
+        # Save shape and dtype metadata for memmap arrays
+        meta = {
+            'shape': (N, C, H, W),
+            'dtype': 'float32'
+        }
+        np.savez(run_dir/"val_preds_dBZ_meta.npz", **meta)
+        np.savez(run_dir/"val_targets_dBZ_meta.npz", **meta)
+
+    # Finalize MSE by range
+    mse_by_range = {}
+    for r_min, r_max in ranges:
+        key = f"mse_{r_min}_{r_max}"
+        if mse_counts[key] > 0:
+            mse_by_range[key] = mse_sums[key] / mse_counts[key]
+        else:
+            mse_by_range[key] = np.nan
     # Save MSE metrics
     np.savez(run_dir/"mse_by_range.npz", **mse_by_range)
     print("MSE by reflectivity range:")
     for range_name, mse in mse_by_range.items():
         print(f"{range_name}: {mse:.4f}")
-    
     if save_arrays:
-        np.save(run_dir/"val_preds_dBZ.npy",   pred_all)
-        np.save(run_dir/"val_targets_dBZ.npy", tgt_all)
         print("Saved val_preds_dBZ.npy + val_targets_dBZ.npy →", run_dir)
-
-    return pred_all, tgt_all
+    return None
 
 
 if __name__ == "__main__":

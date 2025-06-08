@@ -319,7 +319,8 @@ def evaluate_new_storm_predictions(new_storms_pred, new_storms_true, overlap_thr
     matched_true = set()  # (t, idx)
 
     # For each true storm, look for matching pred storm in t-1, t, t+1
-    for t, true_storms in tqdm(true_lookup.items(), desc='Evaluating (true storms)', total=len(true_lookup)):
+    print('Evaluating (true storms)...')
+    for t, true_storms in true_lookup.items():
         for i, true_storm in enumerate(true_storms):
             found = False
             for dt, label in zip([0, -1, 1], ["correct", "early", "late"]):
@@ -349,8 +350,9 @@ def evaluate_new_storm_predictions(new_storms_pred, new_storms_true, overlap_thr
                     break
 
     # False positives: predicted storms not matched to any true storm in ±1 time step
+    print('Evaluating (false positives)...')
     false_positives = 0
-    for t, pred_storms in tqdm(pred_lookup.items(), desc='Evaluating (false positives)', total=len(pred_lookup)):
+    for t, pred_storms in pred_lookup.items():
         for j, pred_storm in enumerate(pred_storms):
             if (t, j) in matched_pred:
                 continue
