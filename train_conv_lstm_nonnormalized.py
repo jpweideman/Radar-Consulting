@@ -5,6 +5,7 @@ import wandb  # Add wandb import
 import argparse
 import os
 import random
+from tqdm import tqdm
 
 def set_seed(seed=42):
     random.seed(seed)
@@ -243,8 +244,9 @@ def train_radar_model(
         model.train() if train else model.eval()
         tot=0.0
         with torch.set_grad_enabled(train):
-            for xb,yb in dl:
-                xb,yb = xb.to(device), yb.to(device)
+            for batch in tqdm(dl, desc=("Train" if train else "Val"), leave=False):
+                xb, yb = batch
+                xb, yb = xb.to(device), yb.to(device)
                 pred  = model(xb)
                 loss  = criterion(pred, yb)
                 if train:

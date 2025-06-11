@@ -474,7 +474,7 @@ def train_radar_model(
         model.train() if train else model.eval()
         tot=0.0
         with torch.set_grad_enabled(train):
-            for batch in dl:
+            for batch in tqdm(dl, desc=("Train" if train else "Val"), leave=False):
                 if use_patches:
                     xb, yb = batch[0], batch[1]  # ignore t, y, x
                 else:
