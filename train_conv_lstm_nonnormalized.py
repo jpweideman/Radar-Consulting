@@ -123,6 +123,7 @@ def train_radar_model(
     loss_weight_thresh: float = 40.0,
     loss_weight_high: float = 10.0,
     wandb_project: str = "radar-forecasting",
+    early_stopping_patience: int = 10,
 ):
     """
     Train a ConvLSTM radar forecasting model without normalization.
@@ -159,6 +160,8 @@ def train_radar_model(
         Weight multiplier for pixels where true > threshold.
     wandb_project : str, optional
         Weights & Biases project name for experiment tracking.
+    early_stopping_patience : int, optional
+        Number of epochs with no improvement before early stopping (default: 10).
 
     Returns
     -------
@@ -234,7 +237,8 @@ def train_radar_model(
             'device': device,
             'loss_name': loss_name,
             'loss_weight_thresh': loss_weight_thresh,
-            'loss_weight_high': loss_weight_high
+            'loss_weight_high': loss_weight_high,
+            'early_stopping_patience': early_stopping_patience
         }
     )
     wandb.watch(model)
@@ -254,6 +258,7 @@ def train_radar_model(
                 tot += loss.item()*xb.size(0)
         return tot/len(dl.dataset)
 
+    epochs_since_improvement = 0
     for ep in range(start_ep, end_epoch+1):
         tr = run_epoch(train_dl, True)
         vl = run_epoch(val_dl,   False)
@@ -267,6 +272,12 @@ def train_radar_model(
             atomic_save(model.state_dict(), ckpt_best)
             print("New best saved")
             wandb.log({'best_val_loss':best_val})
+            epochs_since_improvement = 0
+        else:
+            epochs_since_improvement += 1
+        if epochs_since_improvement >= early_stopping_patience:
+            print(f"Early stopping: validation loss did not improve for {epochs_since_improvement} epochs.")
+            break
 
     print("Done. Checkpoints in", save_dir.resolve())
     wandb.finish()
@@ -422,6 +433,7 @@ if __name__ == "__main__":
     parser.add_argument("--loss_weight_high", type=float, default=10.0,
                         help="Weight multiplier for pixels above threshold (default: 10.0)")
     parser.add_argument("--wandb_project", type=str, default="radar-forecasting", help="wandb project name")
+    parser.add_argument("--early_stopping_patience", type=int, default=10, help="Number of epochs with no improvement before early stopping (default: 10)")
 
     args = parser.parse_args()
 
@@ -452,4 +464,5 @@ if __name__ == "__main__":
         loss_weight_thresh=args.loss_weight_thresh,
         loss_weight_high=args.loss_weight_high,
         wandb_project=args.wandb_project,
+        early_stopping_patience=args.early_stopping_patience,
     )

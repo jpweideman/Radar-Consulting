@@ -184,6 +184,7 @@ def train_radar_model(
     patch_frac: float = 0.15,
     use_patches: bool = False,
     wandb_project: str = "radar-forecasting",
+    early_stopping_patience: int = 10,
 ):
     """
     Train a ConvLSTM radar forecasting model.
@@ -230,6 +231,8 @@ def train_radar_model(
         Whether to use patch-based training (default: False).
     wandb_project : str, optional
         wandb project name
+    early_stopping_patience : int, optional
+        Number of epochs with no improvement before early stopping (default: 10).
 
     Returns
     -------
@@ -333,7 +336,8 @@ def train_radar_model(
             'patch_stride': patch_stride,
             'patch_thresh': patch_thresh,
             'patch_frac': patch_frac,
-            'use_patches': use_patches
+            'use_patches': use_patches,
+            'early_stopping_patience': early_stopping_patience
         }
     )
     wandb.watch(model)
@@ -369,7 +373,7 @@ def train_radar_model(
             epochs_since_improvement = 0
         else:
             epochs_since_improvement += 1
-        if epochs_since_improvement >= 10:
+        if epochs_since_improvement >= early_stopping_patience:
             print(f"Early stopping: validation loss did not improve for {epochs_since_improvement} epochs.")
             break
 
@@ -570,6 +574,7 @@ if __name__ == "__main__":
     train_parser.add_argument("--patch_frac", type=float, default=0.05, help="Minimum fraction of pixels in patch above threshold (default: 0.05)")
     train_parser.add_argument("--use_patches", type=bool, default=True, help="Whether to use patch-based training (default: True)")
     train_parser.add_argument("--wandb_project", type=str, default="radar-forecasting", help="wandb project name")
+    train_parser.add_argument("--early_stopping_patience", type=int, default=10, help="Number of epochs with no improvement before early stopping (default: 10)")
 
     # Subparser for validation
     val_parser = subparsers.add_parser("validate", help="Run validation and compute MSE by reflectivity range")
@@ -617,6 +622,7 @@ if __name__ == "__main__":
             patch_frac=args.patch_frac,
             use_patches=args.use_patches,
             wandb_project=args.wandb_project,
+            early_stopping_patience=args.early_stopping_patience,
         )
     elif args.command == "validate":
         try:
