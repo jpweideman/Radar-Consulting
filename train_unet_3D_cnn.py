@@ -425,7 +425,8 @@ def train_radar_model(
             epochs_since_improvement = 0
         else:
             epochs_since_improvement += 1
-        if epochs_since_improvement >= early_stopping_patience:
+        # Only apply early stopping if patience > 0
+        if early_stopping_patience > 0 and epochs_since_improvement >= early_stopping_patience:
             print(f"Early stopping: validation loss did not improve for {epochs_since_improvement} epochs.")
             break
 
@@ -642,7 +643,7 @@ if __name__ == "__main__":
     train_parser.add_argument("--patch_frac", type=float, default=0.05, help="Minimum fraction of pixels in patch above threshold (default: 0.05)")
     train_parser.add_argument("--use_patches", type=bool, default=True, help="Whether to use patch-based training (default: True)")
     train_parser.add_argument("--wandb_project", type=str, default="radar-forecasting", help="wandb project name")
-    train_parser.add_argument("--early_stopping_patience", type=int, default=10, help="Number of epochs with no improvement before early stopping (default: 10)")
+    train_parser.add_argument("--early_stopping_patience", type=int, default=10, help="Number of epochs with no improvement before early stopping (default: 10). Set to 0 or negative to disable early stopping.")
 
     # Subparser for validation
     val_parser = subparsers.add_parser("validate", help="Run validation and compute MSE by reflectivity range")

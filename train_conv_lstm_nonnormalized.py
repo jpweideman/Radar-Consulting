@@ -275,7 +275,8 @@ def train_radar_model(
             epochs_since_improvement = 0
         else:
             epochs_since_improvement += 1
-        if epochs_since_improvement >= early_stopping_patience:
+        # Only apply early stopping if patience > 0
+        if early_stopping_patience > 0 and epochs_since_improvement >= early_stopping_patience:
             print(f"Early stopping: validation loss did not improve for {epochs_since_improvement} epochs.")
             break
 
@@ -433,7 +434,7 @@ if __name__ == "__main__":
     parser.add_argument("--loss_weight_high", type=float, default=10.0,
                         help="Weight multiplier for pixels above threshold (default: 10.0)")
     parser.add_argument("--wandb_project", type=str, default="radar-forecasting", help="wandb project name")
-    parser.add_argument("--early_stopping_patience", type=int, default=10, help="Number of epochs with no improvement before early stopping (default: 10)")
+    parser.add_argument("--early_stopping_patience", type=int, default=10, help="Number of epochs with no improvement before early stopping (default: 10). Set to 0 or negative to disable early stopping.")
 
     args = parser.parse_args()
 

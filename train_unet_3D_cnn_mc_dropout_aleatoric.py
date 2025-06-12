@@ -216,7 +216,6 @@ def train_radar_model(
     use_patches: bool = False,
     wandb_project: str = "radar-forecasting",
     dropout_p: float = 0.3,
-    mc_samples: int = 10,
     early_stopping_patience: int = 10,
 ):
     """
@@ -269,8 +268,6 @@ def train_radar_model(
         wandb project name (default: "radar-forecasting").
     dropout_p : float, optional
         Dropout probability for MC Dropout (default: 0.3).
-    mc_samples : int, optional
-        Number of MC samples for MC Dropout (default: 10).
     early_stopping_patience : int, optional
         Number of epochs with no improvement before early stopping (default: 10).
 
@@ -378,7 +375,6 @@ def train_radar_model(
             'patch_frac': patch_frac,
             'use_patches': use_patches,
             'dropout_p': dropout_p,
-            'mc_samples': mc_samples,
             'early_stopping_patience': early_stopping_patience
         }
     )
@@ -429,7 +425,8 @@ def train_radar_model(
             epochs_since_improvement = 0
         else:
             epochs_since_improvement += 1
-        if epochs_since_improvement >= early_stopping_patience:
+        # Only apply early stopping if patience > 0
+        if early_stopping_patience > 0 and epochs_since_improvement >= early_stopping_patience:
             print(f"Early stopping: validation loss did not improve for {epochs_since_improvement} epochs.")
             break
 
@@ -682,8 +679,7 @@ if __name__ == "__main__":
     train_parser.add_argument("--use_patches", type=bool, default=True, help="Whether to use patch-based training (default: True)")
     train_parser.add_argument("--wandb_project", type=str, default="radar-forecasting", help="wandb project name")
     train_parser.add_argument("--dropout_p", type=float, default=0.3, help="Dropout probability for MC Dropout (default: 0.3)")
-    train_parser.add_argument("--mc_samples", type=int, default=10, help="Number of MC samples for MC Dropout (default: 10)")
-    train_parser.add_argument("--early_stopping_patience", type=int, default=10, help="Number of epochs with no improvement before early stopping (default: 10)")
+    train_parser.add_argument("--early_stopping_patience", type=int, default=10, help="Number of epochs with no improvement before early stopping (default: 10). Set to 0 or negative to disable early stopping.")
 
     # Subparser for validation
     val_parser = subparsers.add_parser("validate", help="Run validation and compute MSE by reflectivity range")
@@ -736,7 +732,6 @@ if __name__ == "__main__":
             use_patches=args.use_patches,
             wandb_project=args.wandb_project,
             dropout_p=args.dropout_p,
-            mc_samples=args.mc_samples,
             early_stopping_patience=args.early_stopping_patience,
         )
     elif args.command == "validate":
