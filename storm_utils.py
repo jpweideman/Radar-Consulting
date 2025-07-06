@@ -6,6 +6,9 @@ from scipy.ndimage import binary_dilation
 from skimage.measure import find_contours
 from matplotlib.path import Path
 
+from matplotlib.colors import Normalize
+import matplotlib.patches as mpatches
+
 
 def animate_storms(data, reflectivity_threshold=45, area_threshold=15, dilation_iterations=5, interval=100):
     """
@@ -73,6 +76,148 @@ def animate_storms(data, reflectivity_threshold=45, area_threshold=15, dilation_
     plt.close(fig)  # Prevent duplicate static plot
     ani = animation.FuncAnimation(fig, update, frames=data.shape[0], interval=interval)
     return ani
+
+
+# Updated polar storm visualization 
+def animate_storms_polar(data, storm_threshold=45, area_threshold=15,
+                         dilation_iterations=5, interval=100, figsize=(6, 6)):
+    """
+    Create a polar animation of radar reflectivity with storm detection overlays.
+
+    Parameters:
+        data (np.ndarray): 3D array of shape (T, H, W) with reflectivity data.
+        storm_threshold (float): dBZ threshold for storm detection.
+        area_threshold (int): Minimum area (in pixels) to keep a storm.
+        dilation_iterations (int): Dilation iterations to connect storm areas.
+        interval (int): Delay between frames in milliseconds.
+        figsize (tuple): Size of the figure in inches.
+
+    Returns:
+        matplotlib.animation.FuncAnimation: The animation object.
+    """
+    T, H, W = data.shape
+    theta = np.linspace(0, 2 * np.pi, H, endpoint=False)
+    r = np.arange(W)
+    theta_grid, r_grid = np.meshgrid(theta, r, indexing='ij')
+
+    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, figsize=figsize)
+    norm = Normalize(vmin=0, vmax=80)
+    cmap = plt.get_cmap("jet")
+
+    quad = ax.pcolormesh(theta_grid, r_grid, data[0], cmap=cmap, norm=norm)
+    title = ax.set_title("Radar Reflectivity - Time Step 0")
+
+    storm_lines = []
+
+    # Add legend and colorbar
+    storm_patch = mpatches.Patch(color='red', label='Detected Storm')
+    cbar = fig.colorbar(quad, ax=ax, pad=0.1)
+    cbar.set_label('Reflectivity (dBZ)')
+    ax.legend(handles=[storm_patch], loc='upper right', bbox_to_anchor=(1.1, 1.1))
+
+    def update(frame):
+        nonlocal storm_lines
+        frame_data = data[frame]
+        quad.set_array(frame_data.ravel())
+        title.set_text(f"Radar Reflectivity - Time Step {(frame*5)//60}:{frame*5%60:02d}")
+
+        for line in storm_lines:
+            line.remove()
+        storm_lines = []
+
+        mask = frame_data > storm_threshold
+        dilated_mask = binary_dilation(mask, iterations=dilation_iterations)
+        contours = find_contours(dilated_mask.astype(float), 0.5)
+
+        for contour in contours:
+            path = Path(contour[:, ::-1])
+            xg, yg = np.meshgrid(np.arange(W), np.arange(H))
+            coords = np.vstack((xg.ravel(), yg.ravel())).T
+            inside = path.contains_points(coords).reshape((H, W))
+
+            area = np.sum(mask & inside)
+            if area >= area_threshold:
+                theta_pts = contour[:, 0] / H * 2 * np.pi
+                r_pts = contour[:, 1]
+                line, = ax.plot(theta_pts, r_pts, color='red', linewidth=2)
+                storm_lines.append(line)
+
+        return [quad] + storm_lines
+
+    plt.close(fig)
+    ani = animation.FuncAnimation(fig, update, frames=T, interval=interval)
+    return ani
+
+
+def animate_storms_polar_comparison(true_data, pred_data, storm_threshold=45, area_threshold=15,
+                                    dilation_iterations=5, interval=100):
+    assert true_data.shape == pred_data.shape, "Input arrays must have the same shape."
+    T, H, W = true_data.shape
+    theta = np.linspace(0, 2*np.pi, H, endpoint=False)
+    r = np.arange(W)
+    theta_grid, r_grid = np.meshgrid(theta, r, indexing='ij')
+
+    fig, axs = plt.subplots(1, 2, subplot_kw={'projection': 'polar'}, figsize=(12, 6))
+    titles = ['True Reflectivity', 'Predicted Reflectivity']
+
+    norm = Normalize(vmin=0, vmax=80)
+    cmap = plt.get_cmap("jet")
+
+    # Initialize plots
+    quads = []
+    storm_lines = [[], []]
+
+    for i, ax in enumerate(axs):
+        data = true_data if i == 0 else pred_data
+        quad = ax.pcolormesh(theta_grid, r_grid, data[0], cmap=cmap, norm=norm)
+        ax.set_title(f"{titles[i]} - Time 0")
+        quads.append(quad)
+
+    # Shared colorbar
+    cbar = fig.colorbar(quads[0], ax=axs.ravel().tolist(), pad=0.1)
+    cbar.set_label("Reflectivity (dBZ)")
+
+    # Shared storm legend
+    storm_patch = mpatches.Patch(color='red', label='Detected Storm')
+    axs[1].legend(handles=[storm_patch], loc='upper right', bbox_to_anchor=(1.1, 1.1))
+
+    def update(frame):
+        for i, ax in enumerate(axs):
+            data = true_data if i == 0 else pred_data
+            frame_data = data[frame]
+            quads[i].set_array(frame_data.ravel())
+            ax.set_title(f"{titles[i]} - Time {(frame*5)//60}:{frame*5%60:02d}")
+
+            # Remove previous storm lines
+            for line in storm_lines[i]:
+                line.remove()
+            storm_lines[i] = []
+
+            # Storm detection
+            mask = frame_data > storm_threshold
+            dilated_mask = binary_dilation(mask, iterations=dilation_iterations)
+            contours = find_contours(dilated_mask.astype(float), 0.5)
+
+            for contour in contours:
+                path = Path(contour[:, ::-1])
+                xg, yg = np.meshgrid(np.arange(W), np.arange(H))
+                coords = np.vstack((xg.ravel(), yg.ravel())).T
+                inside = path.contains_points(coords).reshape((H, W))
+
+                area = np.sum(mask & inside)
+
+                if area >= area_threshold:
+                    theta_pts = contour[:, 0] / H * 2 * np.pi
+                    r_pts = contour[:, 1]
+                    line, = ax.plot(theta_pts, r_pts, color='red', linewidth=2)
+                    storm_lines[i].append(line)
+
+        return quads + storm_lines[0] + storm_lines[1]
+
+    plt.close(fig)
+    ani = animation.FuncAnimation(fig, update, frames=T, interval=interval)
+    return ani
+
 
 def detect_storms(data, reflectivity_threshold=45, area_threshold=15, dilation_iterations=5):
     """
@@ -230,6 +375,149 @@ def animate_new_storms(data, new_storms_result):
     plt.close(fig)
     ani = animation.FuncAnimation(fig, update, frames=data.shape[0], interval=200)
     return ani
+
+
+# updated new strom detection polar
+
+def animate_new_storms_polar(data, new_storms_result, interval=200):
+    """
+    Animate newly formed storms over time in polar coordinates.
+
+    Parameters:
+    - data: np.ndarray of shape (T, H, W) — reflectivity in polar format (angles x radii)
+    - new_storms_result: list of dicts from detect_new_storm_formations
+    - interval: int — milliseconds between frames
+
+    Returns:
+    - ani: matplotlib.animation.FuncAnimation
+    """
+    T, H, W = data.shape
+    theta = np.linspace(0, 2*np.pi, H, endpoint=False)
+    r = np.arange(W)
+    theta_grid, r_grid = np.meshgrid(theta, r, indexing='ij')
+
+    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, figsize=(6, 6))
+    cmap = plt.get_cmap("jet")
+    norm = Normalize(vmin=0, vmax=80)
+
+    quad = ax.pcolormesh(theta_grid, r_grid, data[0], cmap=cmap, norm=norm)
+    title = ax.set_title("New Storms - Time Step 0")
+    cbar = fig.colorbar(quad, ax=ax, pad=0.1)
+    cbar.set_label("Reflectivity (dBZ)")
+
+    storm_lines = []
+
+    # Legend
+    new_storm_patch = mpatches.Patch(color='lime', label='New Storm')
+    ax.legend(handles=[new_storm_patch], loc='upper right', bbox_to_anchor=(1.1, 1.1))
+
+    def update(frame_id):
+        nonlocal storm_lines
+        quad.set_array(data[frame_id].ravel())
+        title.set_text(f"New Storms - Time Step {(frame_id*5)//60}:{frame_id*5%60:02d}")
+
+        for line in storm_lines:
+            line.remove()
+        storm_lines = []
+
+        frame_entry = next((f for f in new_storms_result if f["time_step"] == frame_id), None)
+        if frame_entry and frame_entry["new_storm_count"] > 0:
+            for contour in frame_entry["new_storm_coordinates"]:
+                contour = np.array(contour)
+                # Convert (x, y) to (theta, r)
+                theta_pts = contour[:, 1] / H * 2 * np.pi
+                r_pts = contour[:, 0]
+                line, = ax.plot(theta_pts, r_pts, color='lime', linewidth=2)
+                storm_lines.append(line)
+
+        return [quad, title] + storm_lines
+
+    plt.close(fig)
+    ani = animation.FuncAnimation(fig, update, frames=T, interval=interval)
+    return ani
+
+
+
+# animate_new_storms_polar_comparison
+def animate_new_storms_polar_comparison(true_data, pred_data, new_true_storms, new_pred_storms, interval=200):
+    """
+    Side-by-side polar animation of new storms: true vs predicted.
+
+    Parameters:
+    - true_data: np.ndarray of shape (T, H, W)
+    - pred_data: np.ndarray of shape (T, H, W)
+    - new_true_storms: output of detect_new_storm_formations on true_data
+    - new_pred_storms: output of detect_new_storm_formations on pred_data
+    - interval: int (ms between frames)
+
+    Returns:
+    - ani: matplotlib.animation.FuncAnimation
+    """
+    T, H, W = true_data.shape
+    theta = np.linspace(0, 2*np.pi, H, endpoint=False)
+    r = np.arange(W)
+    theta_grid, r_grid = np.meshgrid(theta, r, indexing='ij')
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={'projection': 'polar'}, figsize=(12, 6))
+    cmap = plt.get_cmap("jet")
+    norm = Normalize(vmin=0, vmax=80)
+
+    quad1 = ax1.pcolormesh(theta_grid, r_grid, true_data[0], cmap=cmap, norm=norm)
+    quad2 = ax2.pcolormesh(theta_grid, r_grid, pred_data[0], cmap=cmap, norm=norm)
+
+    title1 = ax1.set_title("True - Time Step 0")
+    title2 = ax2.set_title("Predicted - Time Step 0")
+
+    cbar = fig.colorbar(quad1, ax=[ax1, ax2], pad=0.1)
+    cbar.set_label("Reflectivity (dBZ)")
+
+    new_storm_patch = mpatches.Patch(color='lime', label='New Storm')
+    ax1.legend(handles=[new_storm_patch], loc='upper right', bbox_to_anchor=(1.15, 1.1))
+
+    storm_lines1 = []
+    storm_lines2 = []
+
+    def update(frame_id):
+        nonlocal storm_lines1, storm_lines2
+
+        quad1.set_array(true_data[frame_id].ravel())
+        quad2.set_array(pred_data[frame_id].ravel())
+        title1.set_text(f"True - Time Step {(frame_id*5)//60}:{frame_id*5%60:02d}")
+        title2.set_text(f"Predicted - Time Step {(frame_id*5)//60}:{frame_id*5%60:02d}")
+
+        for line in storm_lines1:
+            line.remove()
+        for line in storm_lines2:
+            line.remove()
+        storm_lines1, storm_lines2 = [], []
+
+        # True new storms
+        entry_true = next((e for e in new_true_storms if e["time_step"] == frame_id), None)
+        if entry_true:
+            for contour in entry_true["new_storm_coordinates"]:
+                contour = np.array(contour)
+                theta_pts = contour[:, 1] / H * 2 * np.pi
+                r_pts = contour[:, 0]
+                line, = ax1.plot(theta_pts, r_pts, color='lime', linewidth=2)
+                storm_lines1.append(line)
+
+        # Predicted new storms
+        entry_pred = next((e for e in new_pred_storms if e["time_step"] == frame_id), None)
+        if entry_pred:
+            for contour in entry_pred["new_storm_coordinates"]:
+                contour = np.array(contour)
+                theta_pts = contour[:, 1] / H * 2 * np.pi
+                r_pts = contour[:, 0]
+                line, = ax2.plot(theta_pts, r_pts, color='lime', linewidth=2)
+                storm_lines2.append(line)
+
+        return [quad1, quad2] + storm_lines1 + storm_lines2
+
+    plt.close(fig)
+    ani = animation.FuncAnimation(fig, update, frames=T, interval=interval)
+    return ani
+
+
 
 def evaluate_new_storm_predictions(new_storms_pred, new_storms_true, overlap_threshold=0.2):
     """
